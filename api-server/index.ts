@@ -157,85 +157,15 @@ app.get('/api/farming-plan/:sessionId', (req: Request, res: Response) => {
  * Transform orchestrator report format to frontend synthesis format
  */
 function transformOrchestratorReport(orchestratorReport: any): any {
-  if (!orchestratorReport) return null;
-
-  try {
-    return {
-      recommendedCrop: {
-        name: orchestratorReport.primaryRecommendation?.crop || 'Unknown',
-        variety: orchestratorReport.primaryRecommendation?.variety || 'Not specified',
-        profitEstimate: orchestratorReport.primaryRecommendation?.expectedProfit_per_acre || 0,
-        costEstimate: orchestratorReport.costBreakdown?.totalCost || 0,
-      },
-      sowingDetails: {
-        sowingDate: orchestratorReport.primaryRecommendation?.sowingDate || 'Consult local agricultural office',
-        spacing: orchestratorReport.sowingDetails?.spacing || 'As per variety requirements',
-        seedRate: orchestratorReport.sowingDetails?.seedRate || 'As per variety requirements',
-        soilPreparation: orchestratorReport.sowingDetails?.soilPreparation || orchestratorReport.soilPreparation || 'Standard land preparation',
-      },
-      waterManagement: {
-        irrigationSchedule: orchestratorReport.waterStrategy?.waterSchedule || 'As per crop requirements',
-        waterRequirement: orchestratorReport.waterStrategy?.totalWaterNeeded || 'Moderate',
-        recommendations: orchestratorReport.waterStrategy?.waterSavingTips || [],
-      },
-      sellingStrategy: {
-        bestSellingTime: orchestratorReport.marketStrategy?.bestSellingTime || 'After harvest',
-        expectedPrice: parseFloat(orchestratorReport.marketStrategy?.expectedPrice) || 0,
-        nearbyMandis: (orchestratorReport.marketStrategy?.nearbyMandis || []).map((mandi: any) => ({
-          name: mandi.name || 'Local Mandi',
-          distance: mandi.distance || 0,
-          currentPrice: mandi.currentPrice || 0,
-          coordinates: mandi.coordinates || { lat: 0, lon: 0 },
-        })),
-      },
-      governmentSchemes: (orchestratorReport.governmentSupport?.schemesToApply || []).map((scheme: any) => ({
-        name: scheme.name || '',
-        description: scheme.benefit || '',
-        eligibility: scheme.eligibility || 'Contact local office for details',
-        benefit: scheme.benefit || '',
-        applicationLink: scheme.applicationUrl || scheme.link || '',
-      })),
-      riskWarnings: (orchestratorReport.riskAssessment || []).map((risk: any) => ({
-        risk: risk.risk || '',
-        severity: risk.severity || 'medium',
-        mitigation: risk.mitigation || '',
-      })),
-      actionPlan: (orchestratorReport.actionPlan || []).map((plan: any) => ({
-        month: plan.month || '',
-        activities: plan.tasks || plan.activities || [],
-      })),
-    };
-  } catch (error) {
-    console.error('[API] Error transforming report:', error);
-    // Return a minimal valid structure
-    return {
-      recommendedCrop: {
-        name: 'Report transformation error',
-        variety: 'Please contact support',
-        profitEstimate: 0,
-        costEstimate: 0,
-      },
-      sowingDetails: {
-        sowingDate: 'N/A',
-        spacing: 'N/A',
-        seedRate: 'N/A',
-        soilPreparation: 'N/A',
-      },
-      waterManagement: {
-        irrigationSchedule: 'N/A',
-        waterRequirement: 'N/A',
-        recommendations: [],
-      },
-      sellingStrategy: {
-        bestSellingTime: 'N/A',
-        expectedPrice: 0,
-        nearbyMandis: [],
-      },
-      governmentSchemes: [],
-      riskWarnings: [],
-      actionPlan: [],
-    };
+  if (!orchestratorReport) {
+    console.log('[API] transformOrchestratorReport: orchestratorReport is null/undefined');
+    return null;
   }
+
+  // The orchestrator already returns data in the correct frontend format!
+  // Just pass it through as-is
+  console.log('[API] transformOrchestratorReport: Data already in correct format, passing through');
+  return orchestratorReport;
 }
 
 /**

@@ -4,14 +4,16 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/translations';
-import { Mic, MapPin, Loader2, Info, Map } from 'lucide-react';
+import { Mic, Loader2, Map, Copy, Check } from 'lucide-react';
 import { FarmerInput } from '@/lib/api';
 import {
   isSpeechRecognitionSupported,
   saveToLocalStorage,
   loadFromLocalStorage,
 } from '@/lib/utils';
+import { AddressDetails, Coordinates } from '@/lib/location-types';
 import dynamic from 'next/dynamic';
+import LocationInput from './LocationInput';
 
 // Dynamically import LocationMap to avoid SSR issues with Leaflet
 const LocationMap = dynamic(() => import('./LocationMap'), {
@@ -52,9 +54,8 @@ export default function FarmerInputForm({
 
   // Form state
   const [location, setLocation] = useState('');
-  const [coordinates, setCoordinates] = useState<{ lat: number; lon: number } | null>(
-    null
-  );
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [addressDetails, setAddressDetails] = useState<AddressDetails | null>(null);
   const [landSize, setLandSize] = useState('');
   const [waterSource, setWaterSource] = useState('');
   const [previousCrops, setPreviousCrops] = useState<string[]>([]);
@@ -63,8 +64,8 @@ export default function FarmerInputForm({
 
   // UI state
   const [isListening, setIsListening] = useState(false);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   // Load saved data on mount
   useEffect(() => {
@@ -96,32 +97,14 @@ export default function FarmerInputForm({
     saveToLocalStorage('kisanmind_input', data);
   }, [location, coordinates, landSize, waterSource, previousCrops, budget, notes]);
 
-  // Get current location
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      setErrors((prev) => ({ ...prev, location: t('errors.locationError') }));
-      return;
-    }
+  // Copy address to clipboard
+  const handleCopyAddress = () => {
+    if (!location) return;
 
-    setIsGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoordinates({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        });
-        setLocation(
-          `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`
-        );
-        setIsGettingLocation(false);
-        setErrors((prev) => ({ ...prev, location: '' }));
-      },
-      (error) => {
-        console.error('Location error:', error);
-        setErrors((prev) => ({ ...prev, location: t('errors.locationError') }));
-        setIsGettingLocation(false);
-      }
-    );
+    navigator.clipboard.writeText(location).then(() => {
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+    });
   };
 
   // Voice input handler
@@ -216,61 +199,110 @@ export default function FarmerInputForm({
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
       {/* Location */}
       <div>
-        <label
-          htmlFor="location"
-          className="block text-base font-semibold text-gray-900 mb-2"
-        >
-          {t('input.location')} <span className="text-red-500">*</span>
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder={t('input.locationPlaceholder')}
-            className="flex-1 min-h-touch px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
-          <button
-            type="button"
-            onClick={handleGetLocation}
-            disabled={isGettingLocation}
-            className="min-w-touch min-h-touch px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:bg-gray-400 flex items-center justify-center"
-            aria-label="Get current location"
-          >
-            {isGettingLocation ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <MapPin className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-        {errors.location && (
-          <p className="mt-1 text-sm text-red-600">{errors.location}</p>
-        )}
-        <p className="mt-1 text-sm text-gray-500 flex items-center gap-1">
-          <Info className="w-4 h-4" />
-          {t('input.locationHelper')}
-        </p>
+        <LocationInput
+          coordinates={coordinates}
+          address={location}
+          onCoordinatesChange={setCoordinates}
+          onAddressChange={setLocation}
+          onAddressDetailsChange={setAddressDetails}
+          error={errors.location}
+        />
 
-        {/* Location Preview Card */}
+        {/* Location Preview Card with Detailed Address */}
         {coordinates && (
-          <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200 shadow-md">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                <Map className="w-5 h-5 text-white" />
+          <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200 shadow-md">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <Map className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-bold text-green-800">
+                  Exact Location
+                </h3>
               </div>
-              <h3 className="text-base font-bold text-green-800">Selected Location</h3>
+              <button
+                type="button"
+                onClick={handleCopyAddress}
+                className="p-2 bg-white rounded-lg border border-green-300 hover:bg-green-50 transition-colors"
+                aria-label="Copy address"
+              >
+                {copiedAddress ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4 text-green-600" />
+                )}
+              </button>
             </div>
 
-            <div className="mb-3 space-y-1">
-              <p className="text-sm text-gray-700">
-                <span className="font-semibold">Address:</span> {location || 'Coordinates selected'}
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">Coordinates:</span> {coordinates.lat.toFixed(4)}, {coordinates.lon.toFixed(4)}
-              </p>
-            </div>
+            {/* Detailed Address Display */}
+            {addressDetails && (
+              <div className="mb-4 bg-white rounded-lg p-4 border border-green-200 space-y-2">
+                <div className="text-sm font-bold text-green-800 mb-2">
+                  Address Details:
+                </div>
+                {addressDetails.road && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">Street:</span>
+                    <span className="text-gray-600 flex-1">{addressDetails.road}</span>
+                  </div>
+                )}
+                {(addressDetails.suburb || addressDetails.neighbourhood) && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">Area:</span>
+                    <span className="text-gray-600 flex-1">
+                      {addressDetails.suburb || addressDetails.neighbourhood}
+                    </span>
+                  </div>
+                )}
+                {(addressDetails.city || addressDetails.town || addressDetails.village) && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">City:</span>
+                    <span className="text-gray-600 flex-1">
+                      {addressDetails.city || addressDetails.town || addressDetails.village}
+                    </span>
+                  </div>
+                )}
+                {(addressDetails.district || addressDetails.county) && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">District:</span>
+                    <span className="text-gray-600 flex-1">
+                      {addressDetails.district || addressDetails.county}
+                    </span>
+                  </div>
+                )}
+                {addressDetails.state && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">State:</span>
+                    <span className="text-gray-600 flex-1">{addressDetails.state}</span>
+                  </div>
+                )}
+                {addressDetails.postcode && (
+                  <div className="flex text-sm">
+                    <span className="font-semibold text-gray-700 w-24">PIN:</span>
+                    <span className="text-gray-600 flex-1">{addressDetails.postcode}</span>
+                  </div>
+                )}
+                <div className="flex text-sm pt-2 border-t border-gray-200">
+                  <span className="font-semibold text-gray-700 w-24">Coordinates:</span>
+                  <span className="text-gray-600 flex-1 font-mono text-xs">
+                    {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Full Address (if no detailed breakdown available) */}
+            {!addressDetails && location && (
+              <div className="mb-4 bg-white rounded-lg p-4 border border-green-200">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Address:</span> {location}
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  <span className="font-semibold">Coordinates:</span>{' '}
+                  {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+                </p>
+              </div>
+            )}
 
             {/* Map Preview */}
             <div className="rounded-xl overflow-hidden shadow-lg">

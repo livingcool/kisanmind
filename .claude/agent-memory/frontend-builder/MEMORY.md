@@ -48,6 +48,16 @@
 - **Tile Layers**: OpenStreetMap for street view, Esri for satellite imagery
 - **Loading State**: Include loading spinner in dynamic import options
 
+### 7. Geocoding and Reverse Geocoding (Nominatim API)
+- **API**: OpenStreetMap Nominatim (free, no API key required)
+- **Rate Limiting**: 1 request per second (enforce with timestamp tracking)
+- **User-Agent**: Required header `'User-Agent': 'KisanMind/1.0 (Agricultural Advisory App)'`
+- **Forward Geocoding**: `/search?q={query}&format=json&addressdetails=1&countrycodes=in`
+- **Reverse Geocoding**: `/reverse?lat={lat}&lon={lon}&format=json&addressdetails=1`
+- **Auto-Trigger**: Reverse geocode automatically when coordinates are entered or updated
+- **Debouncing**: Use 1s debounce for address search to prevent rate limit violations
+- **Type Safety**: Created `lib/location-types.ts` with `AddressDetails`, `GeocodingResult`, `Coordinates` interfaces
+
 ## Reusable Component Patterns
 
 ### Form Inputs
@@ -55,6 +65,24 @@
 - Required fields marked with red asterisk
 - Helper text below input with Info icon
 - Error messages in red below helper text
+
+### LocationInput Component Pattern (NEW)
+- **File**: `components/LocationInput.tsx`
+- **Features**:
+  - Dual input: accepts address search OR lat/lon coordinates
+  - Auto reverse-geocode on coordinate entry
+  - Auto forward-geocode on address search (debounced)
+  - Current location button with geolocation API
+  - Rate-limited API calls (1 req/sec for Nominatim)
+  - Loading states for all geocoding operations
+- **Props**:
+  - `coordinates`: Current lat/lon
+  - `address`: Current address string
+  - `onCoordinatesChange`: Callback for coordinate updates
+  - `onAddressChange`: Callback for address updates
+  - `onAddressDetailsChange`: Callback for structured address data
+  - `error`: Optional error message
+- **Integration**: Use with parent form state, not standalone
 
 ### Button Design
 ```tsx
@@ -67,17 +95,36 @@ className="min-h-touch px-6 py-3 bg-primary-600 text-white font-semibold
 className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
 ```
 
-### Location Preview Card Pattern
+### Location Preview Card Pattern (ENHANCED)
 ```tsx
 {coordinates && (
-  <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200 shadow-md">
-    <div className="flex items-center gap-2 mb-3">
-      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-        <Map className="w-5 h-5 text-white" />
+  <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-200 shadow-md">
+    {/* Header with copy button */}
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+          <Map className="w-5 h-5 text-white" />
+        </div>
+        <h3 className="text-base font-bold text-green-800">Exact Location</h3>
       </div>
-      <h3 className="text-base font-bold text-green-800">Selected Location</h3>
+      <button onClick={handleCopyAddress} className="p-2 bg-white rounded-lg">
+        {copiedAddress ? <Check /> : <Copy />}
+      </button>
     </div>
-    {/* Address display, coordinates, and map component */}
+
+    {/* Detailed address breakdown (from reverse geocoding) */}
+    {addressDetails && (
+      <div className="bg-white rounded-lg p-4 border space-y-2">
+        <div className="flex text-sm">
+          <span className="font-semibold w-24">Street:</span>
+          <span>{addressDetails.road}</span>
+        </div>
+        {/* Additional fields: area, city, district, state, PIN, coordinates */}
+      </div>
+    )}
+
+    {/* Map preview */}
+    <LocationMap coordinates={coordinates} address={address} height="200px" />
   </div>
 )}
 ```
@@ -106,6 +153,7 @@ Examples:
 - **Pages**: `app/{route}/page.tsx` (Next.js App Router)
 - **Components**: `components/{ComponentName}.tsx`
 - **Utilities**: `lib/{utility}.ts`
+- **Type Definitions**: `lib/{feature}-types.ts` (e.g., `location-types.ts`)
 - **Translations**: `public/locales/{lang}/translation.json`
 
 ## Common Issues & Solutions
@@ -166,6 +214,24 @@ useEffect(() => {
   const saved = loadFromLocalStorage('key');
   if (saved) setFormData(saved);
 }, []);
+```
+
+### Geocoding Rate Limiting Pattern
+```tsx
+const [lastApiCall, setLastApiCall] = useState<number>(0);
+const MIN_API_DELAY = 1000; // 1 second
+
+const makeApiCall = async () => {
+  const now = Date.now();
+  const timeSinceLastCall = now - lastApiCall;
+  if (timeSinceLastCall < MIN_API_DELAY) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, MIN_API_DELAY - timeSinceLastCall)
+    );
+  }
+  // Make API call
+  setLastApiCall(Date.now());
+};
 ```
 
 ## API Response Handling
