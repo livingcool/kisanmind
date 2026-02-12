@@ -162,10 +162,52 @@ function transformOrchestratorReport(orchestratorReport: any): any {
     return null;
   }
 
-  // The orchestrator already returns data in the correct frontend format!
-  // Just pass it through as-is
-  console.log('[API] transformOrchestratorReport: Data already in correct format, passing through');
-  return orchestratorReport;
+  console.log('[API] transformOrchestratorReport: Transforming FarmingDecisionReport to frontend synthesis format');
+
+  // Transform from FarmingDecisionReport to frontend synthesis format
+  const synthesis = {
+    recommendedCrop: {
+      name: orchestratorReport.primaryRecommendation?.crop || 'Not specified',
+      variety: orchestratorReport.primaryRecommendation?.variety || 'Not specified',
+      profitEstimate: orchestratorReport.primaryRecommendation?.expectedProfit_per_acre || 0,
+      costEstimate: 0, // Not provided by orchestrator, use 0 as default
+    },
+    sowingDetails: {
+      sowingDate: orchestratorReport.primaryRecommendation?.sowingDate || 'Not specified',
+      spacing: 'Standard spacing recommended', // Not in orchestrator output
+      seedRate: 'As per local recommendations', // Not in orchestrator output
+      soilPreparation: 'Prepare soil as per standard practices', // Not in orchestrator output
+    },
+    waterManagement: {
+      irrigationSchedule: orchestratorReport.waterStrategy?.waterSchedule || 'As needed',
+      waterRequirement: orchestratorReport.waterStrategy?.irrigationMethod || 'Standard',
+      recommendations: orchestratorReport.waterStrategy?.waterSavingTips || [],
+    },
+    sellingStrategy: {
+      bestSellingTime: orchestratorReport.marketStrategy?.bestSellingTime || 'Post-harvest',
+      expectedPrice: parseFloat(orchestratorReport.marketStrategy?.expectedPrice) || 0,
+      nearbyMandis: [], // Would need to be populated from market data
+    },
+    governmentSchemes: (orchestratorReport.governmentSupport?.schemesToApply || []).map((scheme: any) => ({
+      name: scheme.name,
+      description: scheme.benefit,
+      eligibility: 'Check with local office',
+      benefit: scheme.benefit,
+      applicationLink: scheme.howToApply || undefined,
+    })),
+    riskWarnings: (orchestratorReport.riskAssessment || []).map((risk: any) => ({
+      risk: risk.risk,
+      severity: risk.severity,
+      mitigation: risk.mitigation,
+    })),
+    actionPlan: (orchestratorReport.monthlyActionPlan || []).map((plan: any) => ({
+      month: plan.month,
+      activities: plan.actions,
+    })),
+  };
+
+  console.log('[API] transformOrchestratorReport: Transformation complete');
+  return synthesis;
 }
 
 /**

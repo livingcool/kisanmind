@@ -83,11 +83,11 @@ export default function FarmingReport({
               {t('results.sections.recommendedCrop')}
             </h2>
             <h3 className="text-3xl font-extrabold text-green-700 mb-3">
-              {synthesis.recommendedCrop.name}
+              {synthesis.recommendedCrop?.name || 'Not specified'}
             </h3>
             <p className="text-lg text-gray-700 mb-4">
               <span className="font-semibold">Variety:</span>{' '}
-              {synthesis.recommendedCrop.variety}
+              {synthesis.recommendedCrop?.variety || 'Not specified'}
             </p>
 
             {/* Profit Estimate */}
@@ -97,10 +97,10 @@ export default function FarmingReport({
               </p>
               <p className="text-3xl font-extrabold text-green-600 flex items-center gap-2">
                 <TrendingUp className="w-8 h-8" />
-                {formatCurrency(synthesis.recommendedCrop.profitEstimate)}
+                {formatCurrency(synthesis.recommendedCrop?.profitEstimate || 0)}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                Cost: {formatCurrency(synthesis.recommendedCrop.costEstimate)}
+                Cost: {formatCurrency(synthesis.recommendedCrop?.costEstimate || 0)}
               </p>
             </div>
           </div>
