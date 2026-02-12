@@ -27,10 +27,13 @@ export default function LoadingProgress({
     return () => clearInterval(timer);
   }, []);
 
-  const overallProgress = Math.round(
-    agentStatuses.reduce((sum, agent) => sum + agent.progress, 0) /
-      agentStatuses.length
-  );
+  // Safe calculation with fallback for undefined or empty agentStatuses
+  const overallProgress = agentStatuses && agentStatuses.length > 0
+    ? Math.round(
+        agentStatuses.reduce((sum, agent) => sum + agent.progress, 0) /
+          agentStatuses.length
+      )
+    : 0;
 
   const remainingTime = Math.max(0, estimatedTime - elapsedTime);
 
@@ -81,7 +84,7 @@ export default function LoadingProgress({
 
       {/* Individual Agent Status */}
       <div className="space-y-4">
-        {agentStatuses.map((agent, index) => (
+        {agentStatuses && agentStatuses.length > 0 ? agentStatuses.map((agent, index) => (
           <div
             key={agent.name}
             className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 transition-all duration-300"
@@ -111,7 +114,12 @@ export default function LoadingProgress({
               )}
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="text-center py-8">
+            <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Initializing AI agents...</p>
+          </div>
+        )}
       </div>
 
       {/* Animated Illustration */}

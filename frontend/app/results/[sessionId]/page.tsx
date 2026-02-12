@@ -144,9 +144,26 @@ Get your personalized farming plan at KisanMind!`;
         {isLoading && plan && plan.status === 'processing' && (
           <div className="mb-12">
             <LoadingProgress
-              agentStatuses={plan.agentStatuses}
+              agentStatuses={plan.agentStatuses || []}
               estimatedTime={30}
             />
+          </div>
+        )}
+
+        {/* Initial Loading (before plan data arrives) */}
+        {isLoading && !plan && (
+          <div className="max-w-2xl mx-auto text-center py-12">
+            <div className="bg-white rounded-2xl shadow-lg p-10">
+              <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                <span className="text-4xl">🌾</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                Preparing Your Analysis
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Our AI agents are getting ready to analyze your farm...
+              </p>
+            </div>
           </div>
         )}
 
