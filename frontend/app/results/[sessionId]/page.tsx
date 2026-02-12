@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/translations';
 import { ArrowLeft, Sprout } from 'lucide-react';
@@ -27,40 +27,66 @@ export default function ResultsPage() {
   const [plan, setPlan] = useState<FarmingPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   // Fetch farming plan
   const fetchPlan = useCallback(async () => {
+    // Prevent multiple concurrent requests
+    if (isFetchingRef.current || !mountedRef.current) {
+      return;
+    }
+
     try {
       if (sessionId === 'demo-session') {
         // Use mock data for demo
         setTimeout(() => {
-          setPlan(getMockFarmingPlan());
-          setIsLoading(false);
+          if (mountedRef.current) {
+            setPlan(getMockFarmingPlan());
+            setIsLoading(false);
+          }
         }, 2000);
         return;
       }
 
+      isFetchingRef.current = true;
       const data = await getFarmingPlan(sessionId);
-      setPlan(data);
 
-      // If still processing, poll again after 2 seconds
+      if (!mountedRef.current) return;
+
+      setPlan(data);
+      isFetchingRef.current = false;
+
+      // If still processing, poll again after 3 seconds
       if (data.status === 'processing') {
-        setTimeout(fetchPlan, 2000);
+        setTimeout(() => fetchPlan(), 3000);
       } else {
         setIsLoading(false);
       }
     } catch (err) {
+      if (!mountedRef.current) return;
+
       console.error('Error fetching plan:', err);
       setError(t('errors.serverError'));
+      isFetchingRef.current = false;
 
-      // Fallback to mock data
-      setPlan(getMockFarmingPlan());
-      setIsLoading(false);
+      // Fallback to mock data after a short delay
+      setTimeout(() => {
+        if (mountedRef.current) {
+          setPlan(getMockFarmingPlan());
+          setIsLoading(false);
+        }
+      }, 1000);
     }
   }, [sessionId, t]);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchPlan();
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [fetchPlan]);
 
   // Handle PDF download
