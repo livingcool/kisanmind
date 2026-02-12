@@ -73,7 +73,11 @@ export interface FarmingDecisionReport {
     crop: string;
     variety: string;
     expectedProfit_per_acre: number;
+    costEstimate_per_acre: number;
     sowingDate: string;
+    spacing: string;
+    seedRate: string;
+    soilPreparation: string;
     confidence: string;
   };
   alternativeOptions: Array<{
@@ -84,13 +88,20 @@ export interface FarmingDecisionReport {
   waterStrategy: {
     irrigationMethod: string;
     waterSchedule: string;
+    totalWaterRequirement: string;
     waterSavingTips: string[];
   };
   marketStrategy: {
     bestSellingTime: string;
     bestMarket: string;
-    expectedPrice: string;
+    expectedPrice: number;
     storageAdvice: string;
+    nearbyMandis: Array<{
+      name: string;
+      distance: number;
+      currentPrice: number;
+      coordinates: { lat: number; lon: number };
+    }>;
   };
   governmentSupport: {
     schemesToApply: Array<{
@@ -98,6 +109,7 @@ export interface FarmingDecisionReport {
       benefit: string;
       howToApply: string;
       deadline: string;
+      eligibility: string;
     }>;
     totalBenefit: string;
   };

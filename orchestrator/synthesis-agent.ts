@@ -41,7 +41,11 @@ OUTPUT FORMAT (JSON):
     "crop": "<crop name>",
     "variety": "<specific variety name>",
     "expectedProfit_per_acre": <number in INR>,
+    "costEstimate_per_acre": <number in INR>,
     "sowingDate": "<exact date or date range>",
+    "spacing": "<row x plant spacing>",
+    "seedRate": "<kg/hectare or kg/acre>",
+    "soilPreparation": "<specific steps for land prep>",
     "confidence": "<high/medium/low>"
   },
   "alternativeOptions": [
@@ -54,13 +58,22 @@ OUTPUT FORMAT (JSON):
   "waterStrategy": {
     "irrigationMethod": "<drip/sprinkler/flood>",
     "waterSchedule": "<when and how much>",
+    "totalWaterRequirement": "<mm or liters/acre>",
     "waterSavingTips": ["<tip1>", "<tip2>"]
   },
   "marketStrategy": {
     "bestSellingTime": "<month/season>",
     "bestMarket": "<specific mandi name>",
-    "expectedPrice": "<INR per quintal>",
-    "storageAdvice": "<how long can you store>"
+    "expectedPrice": <number INR per quintal>,
+    "storageAdvice": "<how long can you store>",
+    "nearbyMandis": [
+      {
+        "name": "<mandi name>",
+        "distance": <number in km>,
+        "currentPrice": <number in INR>,
+        "coordinates": {"lat": <number>, "lon": <number>}
+      }
+    ]
   },
   "governmentSupport": {
     "schemesToApply": [
@@ -68,7 +81,8 @@ OUTPUT FORMAT (JSON):
         "name": "<scheme name>",
         "benefit": "<what you get>",
         "howToApply": "<exact steps>",
-        "deadline": "<when to apply>"
+        "deadline": "<when to apply>",
+        "eligibility": "<who can apply>"
       }
     ],
     "totalBenefit": "<total INR benefit from all schemes>"

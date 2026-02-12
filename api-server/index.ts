@@ -170,28 +170,28 @@ function transformOrchestratorReport(orchestratorReport: any): any {
       name: orchestratorReport.primaryRecommendation?.crop || 'Not specified',
       variety: orchestratorReport.primaryRecommendation?.variety || 'Not specified',
       profitEstimate: orchestratorReport.primaryRecommendation?.expectedProfit_per_acre || 0,
-      costEstimate: 0, // Not provided by orchestrator, use 0 as default
+      costEstimate: orchestratorReport.primaryRecommendation?.costEstimate_per_acre || 0,
     },
     sowingDetails: {
       sowingDate: orchestratorReport.primaryRecommendation?.sowingDate || 'Not specified',
-      spacing: 'Standard spacing recommended', // Not in orchestrator output
-      seedRate: 'As per local recommendations', // Not in orchestrator output
-      soilPreparation: 'Prepare soil as per standard practices', // Not in orchestrator output
+      spacing: orchestratorReport.primaryRecommendation?.spacing || 'Standard spacing recommended',
+      seedRate: orchestratorReport.primaryRecommendation?.seedRate || 'As per local recommendations',
+      soilPreparation: orchestratorReport.primaryRecommendation?.soilPreparation || 'Prepare soil as per standard practices',
     },
     waterManagement: {
       irrigationSchedule: orchestratorReport.waterStrategy?.waterSchedule || 'As needed',
-      waterRequirement: orchestratorReport.waterStrategy?.irrigationMethod || 'Standard',
+      waterRequirement: orchestratorReport.waterStrategy?.totalWaterRequirement || 'Standard requirements',
       recommendations: orchestratorReport.waterStrategy?.waterSavingTips || [],
     },
     sellingStrategy: {
       bestSellingTime: orchestratorReport.marketStrategy?.bestSellingTime || 'Post-harvest',
-      expectedPrice: parseFloat(orchestratorReport.marketStrategy?.expectedPrice) || 0,
-      nearbyMandis: [], // Would need to be populated from market data
+      expectedPrice: orchestratorReport.marketStrategy?.expectedPrice || 0,
+      nearbyMandis: orchestratorReport.marketStrategy?.nearbyMandis || [],
     },
     governmentSchemes: (orchestratorReport.governmentSupport?.schemesToApply || []).map((scheme: any) => ({
       name: scheme.name,
       description: scheme.benefit,
-      eligibility: 'Check with local office',
+      eligibility: scheme.eligibility || 'Check with local office',
       benefit: scheme.benefit,
       applicationLink: scheme.howToApply || undefined,
     })),

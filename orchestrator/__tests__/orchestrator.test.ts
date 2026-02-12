@@ -98,7 +98,11 @@ const MOCK_REPORT: FarmingDecisionReport = {
     crop: 'Soybean',
     variety: 'JS 335',
     expectedProfit_per_acre: 25000,
+    costEstimate_per_acre: 12000,
     sowingDate: 'June 15-30',
+    spacing: '45 cm x 5 cm',
+    seedRate: '75-80 kg/hectare',
+    soilPreparation: 'Deep ploughing followed by 2-3 harrowings',
     confidence: 'high',
   },
   alternativeOptions: [
@@ -107,13 +111,22 @@ const MOCK_REPORT: FarmingDecisionReport = {
   waterStrategy: {
     irrigationMethod: 'drip',
     waterSchedule: 'Every 7 days, 25mm',
+    totalWaterRequirement: '450-650 mm',
     waterSavingTips: ['Use mulch', 'Drip irrigation'],
   },
   marketStrategy: {
     bestSellingTime: 'October-November',
     bestMarket: 'Nagpur APMC',
-    expectedPrice: 'INR 4500/quintal',
+    expectedPrice: 4500,
     storageAdvice: 'Store up to 3 months in dry godown',
+    nearbyMandis: [
+      {
+        name: 'Nagpur APMC',
+        distance: 15,
+        currentPrice: 4500,
+        coordinates: { lat: 21.1458, lon: 79.0882 },
+      },
+    ],
   },
   governmentSupport: {
     schemesToApply: [
@@ -122,6 +135,7 @@ const MOCK_REPORT: FarmingDecisionReport = {
         benefit: 'INR 6000/year',
         howToApply: 'Register at pmkisan.gov.in',
         deadline: 'Open enrollment',
+        eligibility: 'All landholding farmers',
       },
     ],
     totalBenefit: 'INR 6000 annual + crop insurance',
