@@ -41,3 +41,13 @@ Thumbs.db
 
 # Misc
 .turbo
+
+# Log files
+*.log
+*.pid
+
+# Output files
+orchestrator/output-report.json
+
+# Temporary files
+nul

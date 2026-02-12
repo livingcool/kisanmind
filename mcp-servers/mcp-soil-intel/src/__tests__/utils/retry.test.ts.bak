@@ -1,0 +1,274 @@
+/**
+ * Unit tests for Retry utility with exponential backoff
+ */
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { retry } from '../../utils/retry.js';
+
+describe('Retry Utility', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Successful Operations', () => {
+    it('should return result on first success', async () => {
+      const fn = jest.fn<() => Promise<string>>().mockResolvedValue('success');
+
+      const result = await retry<string>(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(result).toBe('success');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return result after retrying once', async () => {
+      const fn = jest.fn<() => Promise<string>>()
+        .mockRejectedValueOnce(new Error('TIMEOUT'))
+        .mockResolvedValue('success');
+
+      const result = await retry<string>(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(result).toBe('success');
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return result after multiple retries', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+        .mockRejectedValueOnce(new Error('ECONNRESET'))
+        .mockResolvedValue('success');
+
+      const result = await retry(fn, { maxAttempts: 4, delayMs: 10 });
+
+      expect(result).toBe('success');
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('Retryable Errors', () => {
+    it('should retry on RATE_LIMIT error', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('RATE_LIMIT exceeded'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on TIMEOUT error', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('TIMEOUT occurred'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on ECONNABORTED error', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('ECONNABORTED'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on ECONNRESET error', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('ECONNRESET'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on ETIMEDOUT error', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on 503 Service Unavailable', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on 502 Bad Gateway', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('502 Bad Gateway'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on 429 Too Many Requests', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('429 Too Many Requests'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('Non-Retryable Errors', () => {
+    it('should not retry on 404 Not Found', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('404 Not Found'));
+
+      await expect(retry(fn, { maxAttempts: 3, delayMs: 10 })).rejects.toThrow('404 Not Found');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on validation errors', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('Invalid input'));
+
+      await expect(retry(fn, { maxAttempts: 3, delayMs: 10 })).rejects.toThrow('Invalid input');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not retry on 401 Unauthorized', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('401 Unauthorized'));
+
+      await expect(retry(fn, { maxAttempts: 3, delayMs: 10 })).rejects.toThrow('401 Unauthorized');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Max Attempts', () => {
+    it('should stop after maxAttempts even if error is retryable', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('TIMEOUT'));
+
+      await expect(retry(fn, { maxAttempts: 3, delayMs: 10 })).rejects.toThrow('TIMEOUT');
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+
+    it('should use default maxAttempts of 3', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('503'));
+
+      await expect(retry(fn, { delayMs: 10 })).rejects.toThrow('503');
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('Exponential Backoff', () => {
+    it('should apply exponential backoff between retries', async () => {
+      const startTime = Date.now();
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('TIMEOUT'))
+        .mockRejectedValueOnce(new Error('TIMEOUT'))
+        .mockResolvedValue('success');
+
+      await retry(fn, {
+        maxAttempts: 3,
+        delayMs: 100,
+        backoffFactor: 2
+      });
+
+      const elapsed = Date.now() - startTime;
+
+      // First retry: 100ms, second retry: 200ms = ~300ms total
+      // Allow some tolerance for execution time
+      expect(elapsed).toBeGreaterThanOrEqual(250);
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+
+    it('should respect maxDelayMs cap', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('TIMEOUT'))
+        .mockRejectedValueOnce(new Error('TIMEOUT'))
+        .mockResolvedValue('success');
+
+      await retry(fn, {
+        maxAttempts: 3,
+        delayMs: 1000,
+        backoffFactor: 10,
+        maxDelayMs: 500
+      });
+
+      // Even with backoffFactor of 10, delay should be capped at 500ms
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle non-Error thrown values', async () => {
+      const fn = jest.fn().mockRejectedValue('string error');
+
+      await expect(retry(fn, { maxAttempts: 2, delayMs: 10 })).rejects.toThrow();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should preserve original error message', async () => {
+      const originalError = new Error('Original error message');
+      const fn = jest.fn().mockRejectedValue(originalError);
+
+      await expect(retry(fn, { maxAttempts: 2, delayMs: 10 })).rejects.toThrow('Original error message');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle maxAttempts = 1 (no retries)', async () => {
+      const fn = jest.fn().mockRejectedValue(new Error('TIMEOUT'));
+
+      await expect(retry(fn, { maxAttempts: 1, delayMs: 10 })).rejects.toThrow('TIMEOUT');
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should work with custom options object', async () => {
+      const fn = jest.fn().mockResolvedValue('success');
+
+      const result = await retry(fn, {
+        maxAttempts: 5,
+        delayMs: 50,
+        backoffFactor: 3,
+        maxDelayMs: 5000
+      });
+
+      expect(result).toBe('success');
+    });
+
+    it('should work with empty options (use defaults)', async () => {
+      const fn = jest.fn().mockResolvedValue('success');
+
+      const result = await retry(fn);
+
+      expect(result).toBe('success');
+    });
+  });
+
+  describe('Case Insensitivity', () => {
+    it('should retry on lowercase error messages', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('timeout occurred'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry on mixed case error messages', async () => {
+      const fn = jest.fn()
+        .mockRejectedValueOnce(new Error('RaTe_LiMiT exceeded'))
+        .mockResolvedValue('success');
+
+      await retry(fn, { maxAttempts: 3, delayMs: 10 });
+
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+  });
+});

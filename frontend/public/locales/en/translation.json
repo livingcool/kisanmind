@@ -1,0 +1,143 @@
+{
+  "common": {
+    "appName": "KisanMind",
+    "tagline": "What should I plant this season to make the most money?",
+    "loading": "Loading...",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "rupee": "₹"
+  },
+  "languages": {
+    "en": "English",
+    "hi": "हिन्दी",
+    "mr": "मराठी",
+    "ta": "தமிழ்",
+    "te": "తెలుగు"
+  },
+  "home": {
+    "title": "Smart Farming Decisions Powered by AI",
+    "subtitle": "Get personalized crop recommendations based on your soil, water, climate, and market conditions",
+    "cta": "Get Your Farming Plan",
+    "howItWorks": "How It Works",
+    "step1": "Share Your Details",
+    "step1Desc": "Tell us about your land, water source, and farming history",
+    "step2": "AI Analysis",
+    "step2Desc": "Our AI analyzes soil, water, climate, market prices, and government schemes",
+    "step3": "Get Your Plan",
+    "step3Desc": "Receive a complete farming plan with profit estimates and action steps"
+  },
+  "input": {
+    "title": "Tell Us About Your Farm",
+    "location": "Farm Location",
+    "locationPlaceholder": "Enter village/district or click map",
+    "locationHelper": "Click on map to select exact location",
+    "landSize": "Land Size",
+    "landSizePlaceholder": "Enter land size",
+    "acres": "Acres",
+    "waterSource": "Water Source",
+    "waterSourcePlaceholder": "Select water source",
+    "waterSources": {
+      "borewell": "Borewell",
+      "canal": "Canal",
+      "rainfed": "Rain-fed",
+      "well": "Open Well",
+      "river": "River/Stream"
+    },
+    "previousCrops": "Previous Crops (Last 2 Seasons)",
+    "previousCropsPlaceholder": "Select crops you've grown",
+    "crops": {
+      "cotton": "Cotton",
+      "soybean": "Soybean",
+      "wheat": "Wheat",
+      "rice": "Rice",
+      "sugarcane": "Sugarcane",
+      "maize": "Maize",
+      "groundnut": "Groundnut",
+      "chilli": "Chilli",
+      "turmeric": "Turmeric",
+      "onion": "Onion",
+      "tomato": "Tomato",
+      "other": "Other"
+    },
+    "budget": "Budget (Optional)",
+    "budgetPlaceholder": "Enter available budget in ₹",
+    "notes": "Additional Information",
+    "notesPlaceholder": "Any other details (irrigation issues, crop failures, etc.)",
+    "voiceInput": "Use Voice Input",
+    "submitPlan": "Get My Farming Plan",
+    "validation": {
+      "locationRequired": "Please provide farm location",
+      "landSizeRequired": "Please enter land size",
+      "landSizePositive": "Land size must be positive",
+      "waterSourceRequired": "Please select water source"
+    }
+  },
+  "results": {
+    "title": "Your Personalized Farming Plan",
+    "analyzing": "Analyzing Your Farm Data",
+    "steps": {
+      "soil": "Analyzing soil conditions...",
+      "water": "Checking water quality...",
+      "climate": "Forecasting climate patterns...",
+      "market": "Checking market prices...",
+      "schemes": "Finding government schemes...",
+      "synthesis": "Preparing your personalized plan..."
+    },
+    "sections": {
+      "recommendedCrop": "Recommended Crop",
+      "profitEstimate": "Expected Profit",
+      "sowingDetails": "Sowing Details",
+      "waterManagement": "Water Management",
+      "sellingStrategy": "Selling Strategy",
+      "governmentSchemes": "Government Schemes",
+      "riskWarnings": "Risk Warnings",
+      "actionPlan": "Month-by-Month Action Plan"
+    },
+    "sowingFields": {
+      "variety": "Variety",
+      "sowingDate": "Sowing Date",
+      "spacing": "Spacing",
+      "seedRate": "Seed Rate"
+    },
+    "actions": {
+      "downloadPDF": "Download PDF",
+      "share": "Share Plan",
+      "newPlan": "Get Another Plan"
+    },
+    "nearbyMandis": "Nearby Market Locations (Mandis)",
+    "distance": "Distance",
+    "currentPrice": "Current Price"
+  },
+  "about": {
+    "title": "About KisanMind",
+    "subtitle": "AI-Powered Agricultural Intelligence for Indian Farmers",
+    "howItWorks": "How KisanMind Works",
+    "description": "KisanMind uses advanced AI technology (Claude Opus 4.6) to analyze multiple factors and provide you with data-driven farming recommendations.",
+    "factors": {
+      "soil": "Soil Analysis",
+      "soilDesc": "We analyze your soil type, pH levels, drainage, and nutrient content to recommend suitable crops",
+      "water": "Water Assessment",
+      "waterDesc": "We evaluate your water source quality, availability, and salinity levels",
+      "climate": "Climate Forecast",
+      "climateDesc": "We use weather predictions to assess rainfall patterns, temperature, and drought risks",
+      "market": "Market Intelligence",
+      "marketDesc": "We track current crop prices, market trends, and identify the best selling locations",
+      "schemes": "Government Support",
+      "schemesDesc": "We find all applicable government schemes, subsidies, and insurance options for you"
+    },
+    "technology": "Powered by Claude Opus 4.6",
+    "techDesc": "Built with cutting-edge AI technology from Anthropic",
+    "contact": "Contact Us",
+    "contactEmail": "support@kisanmind.in"
+  },
+  "errors": {
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later.",
+    "locationError": "Could not detect location. Please enter manually.",
+    "voiceNotSupported": "Voice input not supported in your browser.",
+    "voiceError": "Voice input error. Please try again.",
+    "formValidation": "Please fill all required fields correctly."
+  }
+}

@@ -3,7 +3,27 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project setup for KisanMind\n\nAdd project documentation and base package.json for AI-powered\nagricultural intelligence system for Anthropic Claude Code Hackathon.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(dir /s /b \"E:\\\\2026\\\\Claude-Hackathon\\\\kisanmind\\\\mcp-servers\")",
+      "Bash(dir:*)",
+      "Bash(claude tasks:*)",
+      "Bash(test:*)",
+      "Bash(npm run build:*)",
+      "Bash(node dist/index.js:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm run build:mcp:*)",
+      "Bash(npm run build:orchestrator:*)",
+      "Bash(node:*)",
+      "Bash(npm --version:*)",
+      "Bash(echo:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
