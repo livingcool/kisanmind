@@ -26,6 +26,13 @@ export interface FarmerProfile {
   language: string;
   rawInput: string;
   confidence: number;
+  landUseValidation?: {
+    isAgricultural: boolean;
+    landCoverType: string;
+    confidence: 'high' | 'medium' | 'low';
+    warning?: string;
+    source: string;
+  };
 }
 
 /**

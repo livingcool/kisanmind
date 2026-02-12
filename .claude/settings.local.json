@@ -24,7 +24,11 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(npm run type-check:*)",
+      "Bash(start \"KisanMind-Frontend\" cmd /k \"cd frontend && npm run dev\")",
+      "Bash(start \"KisanMind-API\" cmd /k \"cd api-server && npm start\")"
     ]
   }
 }

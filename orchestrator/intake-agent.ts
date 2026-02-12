@@ -17,6 +17,7 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import type { FarmerProfile } from './types.js';
+import { LandUseValidator } from './utils/land-use-validator.js';
 
 const INTAKE_SYSTEM_PROMPT = `You are an agricultural intake specialist for KisanMind, an AI farming advisor for Indian farmers.
 
@@ -71,10 +72,12 @@ Important:
 export class IntakeAgent {
   private client: Anthropic;
   private model: string;
+  private landUseValidator: LandUseValidator;
 
   constructor(apiKey: string, model: string = 'claude-haiku-4-5-20250315') {
     this.client = new Anthropic({ apiKey });
     this.model = model;
+    this.landUseValidator = new LandUseValidator();
   }
 
   /**
@@ -118,6 +121,35 @@ export class IntakeAgent {
       const parsed = JSON.parse(jsonStr);
 
       const profile = this.buildProfile(parsed, farmerInput);
+
+      // Validate land use (non-blocking - failures don't stop the pipeline)
+      try {
+        console.log(`[IntakeAgent] Validating land use for coordinates ${profile.location.latitude}, ${profile.location.longitude}...`);
+        const landUseValidation = await this.landUseValidator.validateLandUse(
+          profile.location.latitude,
+          profile.location.longitude
+        );
+
+        if (landUseValidation) {
+          profile.landUseValidation = {
+            isAgricultural: landUseValidation.isAgricultural,
+            landCoverType: landUseValidation.landCoverType,
+            confidence: landUseValidation.confidence,
+            warning: landUseValidation.warning,
+            source: landUseValidation.source,
+          };
+
+          if (landUseValidation.warning) {
+            console.warn(`[IntakeAgent] Land use warning: ${landUseValidation.warning}`);
+          }
+          console.log(`[IntakeAgent] Land use: ${landUseValidation.landCoverType} (agricultural: ${landUseValidation.isAgricultural}, source: ${landUseValidation.source})`);
+        } else {
+          console.warn('[IntakeAgent] Land use validation unavailable, proceeding without it');
+        }
+      } catch (error) {
+        // Non-blocking: land use validation failure doesn't stop the pipeline
+        console.warn('[IntakeAgent] Land use validation failed, proceeding without it:', error instanceof Error ? error.message : String(error));
+      }
 
       const elapsed = Date.now() - startTime;
       console.log(`[IntakeAgent] Profile extracted in ${elapsed}ms (confidence: ${profile.confidence})`);

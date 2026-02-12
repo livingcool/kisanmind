@@ -4,13 +4,24 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/translations';
-import { Mic, MapPin, Loader2, Info } from 'lucide-react';
+import { Mic, MapPin, Loader2, Info, Map } from 'lucide-react';
 import { FarmerInput } from '@/lib/api';
 import {
   isSpeechRecognitionSupported,
   saveToLocalStorage,
   loadFromLocalStorage,
 } from '@/lib/utils';
+import dynamic from 'next/dynamic';
+
+// Dynamically import LocationMap to avoid SSR issues with Leaflet
+const LocationMap = dynamic(() => import('./LocationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[200px] bg-gray-100 rounded-xl">
+      <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+    </div>
+  ),
+});
 
 interface FarmerInputFormProps {
   onSubmit: (data: FarmerInput) => void;
@@ -241,6 +252,38 @@ export default function FarmerInputForm({
           <Info className="w-4 h-4" />
           {t('input.locationHelper')}
         </p>
+
+        {/* Location Preview Card */}
+        {coordinates && (
+          <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200 shadow-md">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                <Map className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-green-800">Selected Location</h3>
+            </div>
+
+            <div className="mb-3 space-y-1">
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Address:</span> {location || 'Coordinates selected'}
+              </p>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Coordinates:</span> {coordinates.lat.toFixed(4)}, {coordinates.lon.toFixed(4)}
+              </p>
+            </div>
+
+            {/* Map Preview */}
+            <div className="rounded-xl overflow-hidden shadow-lg">
+              <LocationMap
+                coordinates={coordinates}
+                address={location}
+                height="200px"
+                showSatellite={false}
+                zoom={13}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Land Size */}

@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 // Temporarily disabled for demo - i18n needs client-side setup
 // import '@/i18n.config';
 

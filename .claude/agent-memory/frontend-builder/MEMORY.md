@@ -40,6 +40,14 @@
 - Color contrast meets WCAG AA
 - Screen reader compatible with proper heading hierarchy
 
+### 6. Leaflet Map Integration
+- **SSR Handling**: Always use `dynamic()` import with `ssr: false` for Leaflet components
+- **CSS Import**: Leaflet CSS imported in `app/layout.tsx`
+- **Custom Icons**: Use divIcon with inline HTML/CSS for agricultural theme (green pin)
+- **Z-index**: Set `.leaflet-container { z-index: 0 }` in globals.css
+- **Tile Layers**: OpenStreetMap for street view, Esri for satellite imagery
+- **Loading State**: Include loading spinner in dynamic import options
+
 ## Reusable Component Patterns
 
 ### Form Inputs
@@ -57,6 +65,21 @@ className="min-h-touch px-6 py-3 bg-primary-600 text-white font-semibold
 ### Card Layout
 ```tsx
 className="bg-white rounded-xl p-6 shadow-lg border border-gray-200"
+```
+
+### Location Preview Card Pattern
+```tsx
+{coordinates && (
+  <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200 shadow-md">
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+        <Map className="w-5 h-5 text-white" />
+      </div>
+      <h3 className="text-base font-bold text-green-800">Selected Location</h3>
+    </div>
+    {/* Address display, coordinates, and map component */}
+  </div>
+)}
 ```
 
 ## Tailwind Custom Classes
@@ -87,10 +110,44 @@ Examples:
 
 ## Common Issues & Solutions
 
-### Leaflet Map in Next.js
-- Must check `typeof window !== 'undefined'` before rendering
-- Create custom icons with data URLs to avoid static file issues
-- Set map container `z-index: 0` to prevent overlay conflicts
+### Leaflet Map in Next.js (UPDATED)
+1. **Dynamic Import Pattern**:
+```tsx
+import dynamic from 'next/dynamic';
+
+const LocationMap = dynamic(() => import('./LocationMap'), {
+  ssr: false,
+  loading: () => <LoadingSpinner />
+});
+```
+
+2. **Custom Marker Icons**:
+```tsx
+const customIcon = L.divIcon({
+  className: 'custom-marker',
+  html: `<div style="...">...</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+```
+
+3. **CSS Setup**:
+- Import in layout: `import 'leaflet/dist/leaflet.css';`
+- Add z-index fix in globals.css
+- Set map container style with inline height
+
+4. **Cleanup**:
+```tsx
+useEffect(() => {
+  // Map initialization
+  return () => {
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+  };
+}, [dependencies]);
+```
 
 ### Speech Recognition Browser Support
 - Check for `SpeechRecognition` or `webkitSpeechRecognition`
