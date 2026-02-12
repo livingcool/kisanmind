@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial project setup for KisanMind\n\nAdd project documentation and base package.json for AI-powered\nagricultural intelligence system for Anthropic Claude Code Hackathon.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm install:*)"
+    ]
+  }
+}
