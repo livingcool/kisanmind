@@ -9,12 +9,18 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Dynamic import of orchestrator at runtime to avoid TypeScript resolution issues
 let createOrchestrator: any;
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from parent directory (../../.env from dist/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
