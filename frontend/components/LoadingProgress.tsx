@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/lib/translations';
 import { Loader2, CheckCircle2, AlertCircle, Circle } from 'lucide-react';
 import { AgentStatus } from '@/lib/api';
 

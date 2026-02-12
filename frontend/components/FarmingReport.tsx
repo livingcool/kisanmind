@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/lib/translations';
 import {
   Sprout,
   TrendingUp,

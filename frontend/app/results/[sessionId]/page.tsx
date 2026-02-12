@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/lib/translations';
 import { ArrowLeft, Sprout } from 'lucide-react';
 import LanguageSelector from '@/components/LanguageSelector';
 import LoadingProgress from '@/components/LoadingProgress';

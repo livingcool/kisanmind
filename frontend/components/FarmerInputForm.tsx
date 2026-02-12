@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/lib/translations';
 import { Mic, MapPin, Loader2, Info } from 'lucide-react';
 import { FarmerInput } from '@/lib/api';
 import {
