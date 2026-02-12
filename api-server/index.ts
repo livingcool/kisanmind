@@ -35,6 +35,12 @@ const sessions = new Map<string, {
   report?: any;
   error?: string;
   createdAt: Date;
+  agentStatuses?: Array<{
+    name: string;
+    status: 'pending' | 'running' | 'completed' | 'error';
+    progress: number;
+    message: string;
+  }>;
 }>();
 
 /**
@@ -74,10 +80,17 @@ app.post('/api/farming-plan', async (req: Request, res: Response) => {
     // Generate session ID
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Initialize session
+    // Initialize session with agent statuses
     sessions.set(sessionId, {
       status: 'processing',
       createdAt: new Date(),
+      agentStatuses: [
+        { name: 'Ground Analyzer', status: 'running', progress: 10, message: 'Analyzing soil conditions...' },
+        { name: 'Water Assessor', status: 'running', progress: 10, message: 'Checking water quality...' },
+        { name: 'Climate Forecaster', status: 'running', progress: 10, message: 'Fetching weather data...' },
+        { name: 'Market Intel', status: 'running', progress: 10, message: 'Analyzing market prices...' },
+        { name: 'Scheme Finder', status: 'running', progress: 10, message: 'Finding government schemes...' },
+      ],
     });
 
     // Start processing in background
@@ -114,6 +127,7 @@ app.get('/api/farming-plan/:sessionId', (req: Request, res: Response) => {
     return res.json({
       sessionId,
       status: 'processing',
+      agentStatuses: session.agentStatuses || [],
       message: 'AI agents are analyzing your farm data...',
     });
   }
@@ -130,7 +144,12 @@ app.get('/api/farming-plan/:sessionId', (req: Request, res: Response) => {
   res.json({
     sessionId,
     status: 'completed',
-    report: session.report,
+    agentStatuses: session.agentStatuses?.map(agent => ({
+      ...agent,
+      status: 'completed' as const,
+      progress: 100,
+    })) || [],
+    synthesis: session.report,
   });
 });
 
@@ -159,20 +178,28 @@ async function processfarmerInput(sessionId: string, input: any) {
     const result = await orchestrator.processWithMeta(inputText);
 
     // Store the result
+    const existingSession = sessions.get(sessionId)!;
     sessions.set(sessionId, {
       status: 'completed',
       report: result.report,
-      createdAt: sessions.get(sessionId)!.createdAt,
+      createdAt: existingSession.createdAt,
+      agentStatuses: existingSession.agentStatuses,
     });
 
     console.log(`[API] Session ${sessionId} completed successfully`);
   } catch (error) {
     console.error(`[API] Error processing session ${sessionId}:`, error);
 
+    const existingSession = sessions.get(sessionId)!;
     sessions.set(sessionId, {
       status: 'error',
       error: error instanceof Error ? error.message : 'Processing failed',
-      createdAt: sessions.get(sessionId)!.createdAt,
+      createdAt: existingSession.createdAt,
+      agentStatuses: existingSession.agentStatuses?.map(agent => ({
+        ...agent,
+        status: 'error' as const,
+        message: 'Processing failed',
+      })),
     });
   }
 }
