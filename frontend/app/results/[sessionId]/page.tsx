@@ -57,10 +57,14 @@ export default function ResultsPage() {
       setPlan(data);
       isFetchingRef.current = false;
 
-      // If still processing, poll again after 3 seconds
-      if (data.status === 'processing') {
+      // If completed, stop loading and show results
+      if (data.status === 'completed') {
+        setIsLoading(false);
+      } else if (data.status === 'processing') {
+        // Still processing, poll again after 3 seconds
         setTimeout(() => fetchPlan(), 3000);
       } else {
+        // Error state
         setIsLoading(false);
       }
     } catch (err) {
@@ -166,13 +170,32 @@ Get your personalized farming plan at KisanMind!`;
           </div>
         )}
 
-        {/* Loading State */}
-        {isLoading && plan && plan.status === 'processing' && (
+        {/* Loading State - Show while processing */}
+        {plan && plan.status === 'processing' && (
           <div className="mb-12">
             <LoadingProgress
               agentStatuses={plan.agentStatuses || []}
               estimatedTime={30}
             />
+
+            {/* Show synthesis message when all agents complete */}
+            {plan.agentStatuses && plan.agentStatuses.every(a => a.status === 'completed') && (
+              <div className="max-w-2xl mx-auto mt-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-2xl">🧠</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-purple-900 mb-1">
+                      Generating Your Farming Plan
+                    </h3>
+                    <p className="text-purple-700">
+                      Claude Opus 4.6 is synthesizing insights with Extended Thinking...
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -193,10 +216,14 @@ Get your personalized farming plan at KisanMind!`;
           </div>
         )}
 
-        {/* Completed Plan */}
-        {!isLoading && plan && plan.status === 'completed' && plan.synthesis && (
-          <div>
+        {/* Completed Plan - Show when status is completed */}
+        {plan && plan.status === 'completed' && plan.synthesis && (
+          <div className="animate-fadeIn">
             <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full mb-4">
+                <span className="text-xl">✓</span>
+                <span className="font-semibold">Analysis Complete!</span>
+              </div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                 {t('results.title')}
               </h2>
