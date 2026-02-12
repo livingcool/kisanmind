@@ -172,6 +172,70 @@ async function processfarmerInput(sessionId: string, input: any) {
     // Create orchestrator with progress callback
     const orchestrator = createOrchestrator((stage: string, message: string) => {
       console.log(`[API] [${sessionId}] ${stage}: ${message}`);
+
+      // Update agent statuses based on orchestrator events
+      const session = sessions.get(sessionId);
+      if (!session || !session.agentStatuses) return;
+
+      // Map stages to agent updates
+      if (stage.includes('soil')) {
+        const idx = session.agentStatuses.findIndex(a => a.name === 'Ground Analyzer');
+        if (idx >= 0) {
+          session.agentStatuses[idx] = {
+            ...session.agentStatuses[idx],
+            status: stage.includes('done') ? 'completed' : 'running',
+            progress: stage.includes('done') ? 100 : 50,
+            message: stage.includes('done') ? 'Soil analysis complete' : 'Analyzing soil...',
+          };
+        }
+      } else if (stage.includes('water')) {
+        const idx = session.agentStatuses.findIndex(a => a.name === 'Water Assessor');
+        if (idx >= 0) {
+          session.agentStatuses[idx] = {
+            ...session.agentStatuses[idx],
+            status: stage.includes('done') ? 'completed' : 'running',
+            progress: stage.includes('done') ? 100 : 50,
+            message: stage.includes('done') ? 'Water assessment complete' : 'Assessing water...',
+          };
+        }
+      } else if (stage.includes('climate')) {
+        const idx = session.agentStatuses.findIndex(a => a.name === 'Climate Forecaster');
+        if (idx >= 0) {
+          session.agentStatuses[idx] = {
+            ...session.agentStatuses[idx],
+            status: stage.includes('done') ? 'completed' : 'running',
+            progress: stage.includes('done') ? 100 : 50,
+            message: stage.includes('done') ? 'Climate forecast complete' : 'Forecasting climate...',
+          };
+        }
+      } else if (stage.includes('market')) {
+        const idx = session.agentStatuses.findIndex(a => a.name === 'Market Intel');
+        if (idx >= 0) {
+          session.agentStatuses[idx] = {
+            ...session.agentStatuses[idx],
+            status: stage.includes('done') ? 'completed' : 'running',
+            progress: stage.includes('done') ? 100 : 50,
+            message: stage.includes('done') ? 'Market analysis complete' : 'Analyzing markets...',
+          };
+        }
+      } else if (stage.includes('scheme')) {
+        const idx = session.agentStatuses.findIndex(a => a.name === 'Scheme Finder');
+        if (idx >= 0) {
+          session.agentStatuses[idx] = {
+            ...session.agentStatuses[idx],
+            status: stage.includes('done') ? 'completed' : 'running',
+            progress: stage.includes('done') ? 100 : 50,
+            message: stage.includes('done') ? 'Schemes found' : 'Finding schemes...',
+          };
+        }
+      } else if (stage.includes('synthesis')) {
+        // All agents complete, synthesis starting
+        session.agentStatuses.forEach((agent, idx) => {
+          session.agentStatuses![idx] = { ...agent, status: 'completed', progress: 100 };
+        });
+      }
+
+      sessions.set(sessionId, session);
     });
 
     // Process the input
