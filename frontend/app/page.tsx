@@ -56,8 +56,12 @@ export default function HomePage() {
 
             {/* CTA Button with enhanced styling */}
             <button
-              onClick={() => router.push('/input')}
-              className="group min-h-touch px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xl font-bold rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-105 flex items-center gap-3 mx-auto animate-pulse hover:animate-none"
+              onClick={() => {
+                console.log('Button clicked, navigating to /input');
+                router.push('/input');
+              }}
+              type="button"
+              className="group min-h-touch px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xl font-bold rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-105 flex items-center gap-3 mx-auto cursor-pointer"
             >
               {t('home.cta')}
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -215,8 +219,12 @@ export default function HomePage() {
               Get started with your free personalized farming plan today
             </p>
             <button
-              onClick={() => router.push('/input')}
-              className="min-h-touch px-10 py-4 bg-white text-primary-700 text-lg font-bold rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center gap-3"
+              onClick={() => {
+                console.log('Bottom CTA clicked');
+                router.push('/input');
+              }}
+              type="button"
+              className="min-h-touch px-10 py-4 bg-white text-primary-700 text-lg font-bold rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center gap-3 cursor-pointer"
             >
               Start Now - It's Free
               <ArrowRight className="w-6 h-6" />
