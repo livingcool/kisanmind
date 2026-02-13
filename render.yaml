@@ -1,0 +1,17 @@
+services:
+  # KisanMind API Server
+  - type: web
+    name: kisanmind-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd api-server && npm install && npm run build
+    startCommand: cd api-server && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: FRONTEND_URL
+        value: https://kisanmind.vercel.app  # Update after Vercel deployment

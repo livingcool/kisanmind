@@ -29,7 +29,8 @@
       "Bash(npm run type-check:*)",
       "Bash(start \"KisanMind-Frontend\" cmd /k \"cd frontend && npm run dev\")",
       "Bash(start \"KisanMind-API\" cmd /k \"cd api-server && npm start\")",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git -C \"E:\\\\2026\\\\Claude-Hackathon\\\\kisanmind\" log --oneline -20)"
     ]
   }
 }
