@@ -1,4 +1,5 @@
 // app/layout.tsx - Root layout for Next.js app
+// KisanMind - AI-Powered Agricultural Intelligence System
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
