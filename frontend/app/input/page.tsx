@@ -90,7 +90,7 @@ export default function InputPage() {
               <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-lg">
                 <p className="text-red-800 font-medium">{error}</p>
                 <p className="text-red-600 text-sm mt-1">
-                  Don't worry - we'll use demo data to show you how it works!
+                  Don&apos;t worry - we&apos;ll use demo data to show you how it works!
                 </p>
               </div>
             )}

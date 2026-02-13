@@ -154,7 +154,7 @@ export default function AboutPage() {
               {t('about.contact')}
             </h3>
             <p className="text-lg text-gray-600 mb-6">
-              Have questions or feedback? We'd love to hear from you!
+              Have questions or feedback? We&apos;d love to hear from you!
             </p>
             <a
               href="mailto:support@kisanmind.in"

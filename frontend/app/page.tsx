@@ -138,7 +138,7 @@ export default function HomePage() {
           {/* Features Grid */}
           <div className="mb-16">
             <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-8">
-              What You'll Get
+              What You&apos;ll Get
             </h3>
             <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
               <div className="bg-white/90 backdrop-blur rounded-xl p-6 border-2 border-gray-200 hover:border-primary-300 transition-all hover:shadow-lg">
@@ -226,7 +226,7 @@ export default function HomePage() {
               type="button"
               className="min-h-touch px-10 py-4 bg-white text-primary-700 text-lg font-bold rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center gap-3 cursor-pointer"
             >
-              Start Now - It's Free
+              Start Now - It&apos;s Free
               <ArrowRight className="w-6 h-6" />
             </button>
           </div>

@@ -252,7 +252,7 @@ Get your personalized farming plan at KisanMind!`;
                 Plan Not Found
               </h3>
               <p className="text-gray-600 mb-6">
-                We couldn't find the farming plan you're looking for.
+                We couldn&apos;t find the farming plan you&apos;re looking for.
               </p>
               <button
                 onClick={() => router.push('/input')}
