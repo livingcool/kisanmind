@@ -301,8 +301,8 @@ visualAssessmentRouter.post(
         longitude: longitude ? parseFloat(longitude) : null,
       };
 
-      // Store in database
-      storeAssessment(assessment);
+      // Store in database (now async with Firebase)
+      await storeAssessment(assessment);
 
       // Return results
       res.json({
@@ -350,9 +350,9 @@ visualAssessmentRouter.post(
  *
  * Retrieve a specific visual assessment by ID.
  */
-visualAssessmentRouter.get('/:id', (req: Request, res: Response) => {
+visualAssessmentRouter.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const assessment = getAssessment(id);
+  const assessment = await getAssessment(id);
 
   if (!assessment) {
     return res.status(404).json({
@@ -386,9 +386,9 @@ visualAssessmentRouter.get('/:id', (req: Request, res: Response) => {
  *
  * Retrieve all visual assessments for a given farmer session.
  */
-visualAssessmentRouter.get('/session/:sessionId', (req: Request, res: Response) => {
+visualAssessmentRouter.get('/session/:sessionId', async (req: Request, res: Response) => {
   const { sessionId } = req.params;
-  const assessments = getSessionAssessments(sessionId);
+  const assessments = await getSessionAssessments(sessionId);
 
   res.json({
     status: 'success',
@@ -416,9 +416,9 @@ visualAssessmentRouter.get('/session/:sessionId', (req: Request, res: Response) 
  * Retrieve the latest visual assessment for a session, formatted
  * as VisualIntelligence for the orchestrator.
  */
-visualAssessmentRouter.get('/session/:sessionId/latest', (req: Request, res: Response) => {
+visualAssessmentRouter.get('/session/:sessionId/latest', async (req: Request, res: Response) => {
   const { sessionId } = req.params;
-  const latest = getLatestAssessment(sessionId);
+  const latest = await getLatestAssessment(sessionId);
 
   if (!latest) {
     return res.json({

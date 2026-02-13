@@ -483,3 +483,178 @@ function toDate(value: Date | Timestamp | unknown): Date {
   }
   return new Date();
 }
+
+// ---------------------------------------------------------------------------
+// Visual Assessment Storage
+// ---------------------------------------------------------------------------
+
+const VISUAL_ASSESSMENTS_COLLECTION = 'visualAssessments';
+const VISUAL_ASSESSMENT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+/** Visual assessment document stored in Firestore */
+export interface VisualAssessmentDocument {
+  id: string;
+  sessionId: string;
+  createdAt: Date | Timestamp;
+  expiresAt: Date | Timestamp;
+
+  // Soil analysis results
+  soilAnalysis: any | null;
+  soilImageCount: number;
+
+  // Crop analysis results
+  cropAnalysis: any | null;
+  cropImageCount: number;
+
+  // Metadata
+  overallConfidence: number;
+  analysisType: 'soil' | 'crop' | 'both';
+  processingTime_ms: number;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/**
+ * Store a visual assessment in Firestore.
+ */
+export async function storeVisualAssessment(
+  assessment: Omit<VisualAssessmentDocument, 'createdAt' | 'expiresAt'>
+): Promise<boolean> {
+  if (!isFirebaseAvailable()) return false;
+
+  const now = admin.firestore.Timestamp.now();
+  const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + VISUAL_ASSESSMENT_TTL_MS);
+
+  const doc: VisualAssessmentDocument = {
+    ...assessment,
+    createdAt: now,
+    expiresAt,
+  };
+
+  try {
+    await withRetry(`storeVisualAssessment(${assessment.id})`, () =>
+      db!.collection(VISUAL_ASSESSMENTS_COLLECTION).doc(assessment.id).set(doc),
+    );
+    console.log(`[Firebase] Visual assessment ${assessment.id} stored for session ${assessment.sessionId}`);
+    return true;
+  } catch (error) {
+    console.error(`[Firebase] Failed to store visual assessment ${assessment.id}:`, error instanceof Error ? error.message : error);
+    return false;
+  }
+}
+
+/**
+ * Retrieve a visual assessment by ID.
+ */
+export async function getVisualAssessment(id: string): Promise<VisualAssessmentDocument | null> {
+  if (!isFirebaseAvailable()) return null;
+
+  try {
+    const snap = await withRetry(`getVisualAssessment(${id})`, () =>
+      db!.collection(VISUAL_ASSESSMENTS_COLLECTION).doc(id).get(),
+    );
+
+    if (!snap.exists) return null;
+
+    const data = snap.data() as VisualAssessmentDocument;
+    return {
+      ...data,
+      createdAt: toDate(data.createdAt),
+      expiresAt: toDate(data.expiresAt),
+    };
+  } catch (error) {
+    console.error(`[Firebase] Failed to get visual assessment ${id}:`, error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
+ * Get all visual assessments for a session.
+ */
+export async function getSessionVisualAssessments(sessionId: string): Promise<VisualAssessmentDocument[]> {
+  if (!isFirebaseAvailable()) return [];
+
+  try {
+    const snapshot = await withRetry(`getSessionVisualAssessments(${sessionId})`, () =>
+      db!.collection(VISUAL_ASSESSMENTS_COLLECTION)
+        .where('sessionId', '==', sessionId)
+        .orderBy('createdAt', 'desc')
+        .get(),
+    );
+
+    return snapshot.docs.map(doc => {
+      const data = doc.data() as VisualAssessmentDocument;
+      return {
+        ...data,
+        createdAt: toDate(data.createdAt),
+        expiresAt: toDate(data.expiresAt),
+      };
+    });
+  } catch (error) {
+    console.error(`[Firebase] Failed to get visual assessments for session ${sessionId}:`, error instanceof Error ? error.message : error);
+    return [];
+  }
+}
+
+/**
+ * Get the latest visual assessment for a session.
+ */
+export async function getLatestVisualAssessment(sessionId: string): Promise<VisualAssessmentDocument | null> {
+  if (!isFirebaseAvailable()) return null;
+
+  try {
+    const snapshot = await withRetry(`getLatestVisualAssessment(${sessionId})`, () =>
+      db!.collection(VISUAL_ASSESSMENTS_COLLECTION)
+        .where('sessionId', '==', sessionId)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get(),
+    );
+
+    if (snapshot.empty) return null;
+
+    const data = snapshot.docs[0].data() as VisualAssessmentDocument;
+    return {
+      ...data,
+      createdAt: toDate(data.createdAt),
+      expiresAt: toDate(data.expiresAt),
+    };
+  } catch (error) {
+    console.error(`[Firebase] Failed to get latest visual assessment for session ${sessionId}:`, error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
+ * Delete expired visual assessments.
+ */
+export async function cleanupExpiredVisualAssessments(): Promise<number> {
+  if (!isFirebaseAvailable()) return -1;
+
+  try {
+    const now = admin.firestore.Timestamp.now();
+    const query = db!
+      .collection(VISUAL_ASSESSMENTS_COLLECTION)
+      .where('expiresAt', '<', now)
+      .limit(500);
+
+    const snapshot = await withRetry('cleanupExpiredVisualAssessments:query', () => query.get());
+
+    if (snapshot.empty) {
+      console.log('[Firebase] Cleanup: no expired visual assessments found');
+      return 0;
+    }
+
+    const batch = db!.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+    await withRetry('cleanupExpiredVisualAssessments:batch', () => batch.commit());
+
+    const count = snapshot.docs.length;
+    console.log(`[Firebase] Cleanup: deleted ${count} expired visual assessment(s)`);
+    return count;
+  } catch (error) {
+    console.error('[Firebase] Visual assessment cleanup failed:', error instanceof Error ? error.message : error);
+    return -1;
+  }
+}

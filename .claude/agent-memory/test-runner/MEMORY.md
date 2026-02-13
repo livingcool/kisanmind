@@ -142,3 +142,46 @@ it('TC4.1: should store and retrieve assessment', () => {});
 ### Jest Root Configuration Issue
 Tests must be in `__tests__` directories within roots specified in jest.config.js.
 Don't create `tests/` at project root - move to component-specific `__tests__` folders.
+
+## Frontend Testing (Vitest)
+
+### Camera Dark Screen Fix (Feb 2026)
+
+**Critical Issue Resolved**: Camera preview showed black screen due to race condition between React ref attachment and MediaStream assignment.
+
+**Solution**: Added useEffect to sync stream to video element when stream state changes:
+```typescript
+useEffect(() => {
+  if (videoRef.current && streamRef.current) {
+    videoRef.current.srcObject = streamRef.current;
+    videoRef.current.play().catch(console.warn);
+  }
+}, [state.stream]);
+```
+
+**Files**: See [camera-testing-notes.md](./camera-testing-notes.md) for detailed patterns.
+
+### Vitest Setup
+
+- Config: `frontend/vitest.config.ts`
+- Setup: `frontend/vitest.setup.ts` (mocks MediaStream, video element, canvas)
+- Tests: `__tests__/` directories in component folders
+
+### Test Results
+- ✅ CameraCapture Component: 8/8 tests passing
+- ⚠️ useVideoStream Hook: 5/23 passing (implementation detail tests need refactoring)
+
+### Key Patterns
+
+1. **Mock hooks module-level**: `vi.mock('../hooks/useVideoStream')`
+2. **Override in beforeEach**: Use `vi.mocked()` for test-specific behavior
+3. **Test behavior, not internals**: Focus on user-facing functionality
+4. **Avoid testing ref timing**: Race conditions make these tests flaky
+
+### Commands
+```bash
+cd frontend
+npm test              # Watch mode
+npm test -- --run     # Run once
+npm test:coverage     # Coverage report
+```

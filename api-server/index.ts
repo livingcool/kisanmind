@@ -211,7 +211,8 @@ app.post('/api/farming-plan', async (req: Request, res: Response) => {
       || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Check if visual assessment data is available for this session
-    const hasVisualData = !!visualAssessmentId || !!getLatestAssessment(sessionId);
+    const latestVisualCheck = await getLatestAssessment(sessionId);
+    const hasVisualData = !!visualAssessmentId || !!latestVisualCheck;
 
     const initialAgentStatuses: AgentStatus[] = [
       { name: 'Ground Analyzer', status: 'running', progress: 10, message: 'Analyzing soil conditions...' },
@@ -470,7 +471,7 @@ async function processfarmerInput(sessionId: string, input: any) {
     });
 
     // Check for visual assessment data for this session
-    const latestVisual = getLatestAssessment(sessionId);
+    const latestVisual = await getLatestAssessment(sessionId);
     const visualIntelligence = latestVisual ? toVisualIntelligence(latestVisual) : null;
     if (visualIntelligence) {
       console.log(`[API] Visual intelligence available for session ${sessionId}: soil=${visualIntelligence.hasSoilData}, crop=${visualIntelligence.hasCropData}, confidence=${visualIntelligence.overallConfidence}`);

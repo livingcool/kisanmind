@@ -30,7 +30,14 @@
       "Bash(start \"KisanMind-Frontend\" cmd /k \"cd frontend && npm run dev\")",
       "Bash(start \"KisanMind-API\" cmd /k \"cd api-server && npm start\")",
       "Bash(npm run dev:*)",
-      "Bash(git -C \"E:\\\\2026\\\\Claude-Hackathon\\\\kisanmind\" log --oneline -20)"
+      "Bash(git -C \"E:\\\\2026\\\\Claude-Hackathon\\\\kisanmind\" log --oneline -20)",
+      "Bash(git push:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /e/2026/Claude-Hackathon/kisanmind log --oneline -15)",
+      "Bash(timeout:*)",
+      "Bash(tee:*)",
+      "Bash(py:*)",
+      "Bash(python3:*)"
     ]
   }
 }

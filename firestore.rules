@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Sessions collection - Accessed by API server only
+    match /sessions/{sessionId} {
+      // Allow API server to read/write all sessions
+      // In production, add API key validation or service account restrictions
+      allow read, write: if true;
+    }
+
+    // Visual Assessments collection - Accessed by API server only
+    match /visualAssessments/{assessmentId} {
+      // Allow API server to read/write all visual assessments
+      // In production, add API key validation or service account restrictions
+      allow read, write: if true;
+    }
+
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

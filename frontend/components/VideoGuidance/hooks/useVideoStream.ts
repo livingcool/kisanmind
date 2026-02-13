@@ -72,6 +72,12 @@ export function useVideoStream(options: VideoStreamOptions = {}) {
       // Attach stream to video element if ref is available
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure video plays (some browsers require explicit play call)
+        try {
+          await videoRef.current.play();
+        } catch (playError) {
+          console.warn('Video autoplay failed:', playError);
+        }
       }
     } catch (error: any) {
       console.error('Error accessing camera:', error);
@@ -148,6 +154,17 @@ export function useVideoStream(options: VideoStreamOptions = {}) {
     // Return as base64 data URL (JPEG format, 0.9 quality for good balance)
     return canvas.toDataURL('image/jpeg', 0.9);
   };
+
+  // Sync stream to video element when either changes
+  useEffect(() => {
+    if (videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      // Ensure video plays
+      videoRef.current.play().catch((error) => {
+        console.warn('Video autoplay failed:', error);
+      });
+    }
+  }, [state.stream]); // Re-run when stream changes
 
   // Cleanup on unmount
   useEffect(() => {

@@ -1,17 +1,27 @@
 /**
  * Visual Assessment Database
  *
- * SQLite-based storage for visual assessment results. Stores soil
- * classification and crop disease detection results from the ML
+ * Persistent storage for visual assessment results using Firebase Firestore.
+ * Stores soil classification and crop disease detection results from the ML
  * inference service, linked to farmer sessions.
  *
- * For the hackathon this uses a simple in-memory store (same pattern
- * as the main session storage). Post-hackathon, this can be migrated
- * to Firestore or a real SQLite database.
+ * Storage strategy:
+ *   - Primary:  Firestore (persistent across restarts)
+ *   - Cache:    In-memory Map (fast access for current session)
+ *   - Fallback: In-memory only (when Firebase unavailable)
  *
  * Schema mirrors what the ML inference service returns, plus metadata
  * for linking assessments to farmer sessions and orchestrator runs.
  */
+
+import {
+  isFirebaseAvailable,
+  storeVisualAssessment as fbStoreVisualAssessment,
+  getVisualAssessment as fbGetVisualAssessment,
+  getSessionVisualAssessments as fbGetSessionVisualAssessments,
+  getLatestVisualAssessment as fbGetLatestVisualAssessment,
+  cleanupExpiredVisualAssessments as fbCleanupExpiredVisualAssessments,
+} from './firebase.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -146,9 +156,10 @@ const sessionAssessments = new Map<string, string[]>(); // sessionId -> assessme
 // ---------------------------------------------------------------------------
 
 /**
- * Store a new visual assessment.
+ * Store a new visual assessment in both Firestore and in-memory cache.
  */
-export function storeAssessment(assessment: VisualAssessment): void {
+export async function storeAssessment(assessment: VisualAssessment): Promise<void> {
+  // Always store in-memory for fast access
   assessments.set(assessment.id, assessment);
 
   // Index by session
@@ -160,30 +171,143 @@ export function storeAssessment(assessment: VisualAssessment): void {
     `[VisualAssessmentDB] Stored assessment ${assessment.id} for session ${assessment.sessionId} ` +
     `(type: ${assessment.analysisType}, confidence: ${assessment.overallConfidence})`
   );
+
+  // Persist to Firebase (best effort)
+  if (isFirebaseAvailable()) {
+    await fbStoreVisualAssessment({
+      id: assessment.id,
+      sessionId: assessment.sessionId,
+      soilAnalysis: assessment.soilAnalysis,
+      soilImageCount: assessment.soilImageCount,
+      cropAnalysis: assessment.cropAnalysis,
+      cropImageCount: assessment.cropImageCount,
+      overallConfidence: assessment.overallConfidence,
+      analysisType: assessment.analysisType,
+      processingTime_ms: assessment.processingTime_ms,
+      latitude: assessment.latitude,
+      longitude: assessment.longitude,
+    });
+  }
 }
 
 /**
- * Retrieve an assessment by ID.
+ * Retrieve an assessment by ID. Checks in-memory first, then Firestore.
  */
-export function getAssessment(id: string): VisualAssessment | null {
-  return assessments.get(id) ?? null;
+export async function getAssessment(id: string): Promise<VisualAssessment | null> {
+  // Check in-memory first
+  const cached = assessments.get(id);
+  if (cached) return cached;
+
+  // Fall back to Firestore
+  if (isFirebaseAvailable()) {
+    const fbDoc = await fbGetVisualAssessment(id);
+    if (fbDoc) {
+      const assessment: VisualAssessment = {
+        id: fbDoc.id,
+        sessionId: fbDoc.sessionId,
+        createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+        soilAnalysis: fbDoc.soilAnalysis,
+        soilImageCount: fbDoc.soilImageCount,
+        cropAnalysis: fbDoc.cropAnalysis,
+        cropImageCount: fbDoc.cropImageCount,
+        overallConfidence: fbDoc.overallConfidence,
+        analysisType: fbDoc.analysisType,
+        processingTime_ms: fbDoc.processingTime_ms,
+        latitude: fbDoc.latitude,
+        longitude: fbDoc.longitude,
+      };
+      // Hydrate cache
+      assessments.set(id, assessment);
+      return assessment;
+    }
+  }
+
+  return null;
 }
 
 /**
- * Retrieve all assessments for a session.
+ * Retrieve all assessments for a session. Checks in-memory first, then Firestore.
  */
-export function getSessionAssessments(sessionId: string): VisualAssessment[] {
+export async function getSessionAssessments(sessionId: string): Promise<VisualAssessment[]> {
+  // Check if we have cached assessments
   const ids = sessionAssessments.get(sessionId) ?? [];
-  return ids.map(id => assessments.get(id)).filter(Boolean) as VisualAssessment[];
+  if (ids.length > 0) {
+    const cached = ids.map(id => assessments.get(id)).filter(Boolean) as VisualAssessment[];
+    if (cached.length > 0) return cached;
+  }
+
+  // Fall back to Firestore
+  if (isFirebaseAvailable()) {
+    const fbDocs = await fbGetSessionVisualAssessments(sessionId);
+    const results: VisualAssessment[] = fbDocs.map(fbDoc => ({
+      id: fbDoc.id,
+      sessionId: fbDoc.sessionId,
+      createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+      soilAnalysis: fbDoc.soilAnalysis,
+      soilImageCount: fbDoc.soilImageCount,
+      cropAnalysis: fbDoc.cropAnalysis,
+      cropImageCount: fbDoc.cropImageCount,
+      overallConfidence: fbDoc.overallConfidence,
+      analysisType: fbDoc.analysisType,
+      processingTime_ms: fbDoc.processingTime_ms,
+      latitude: fbDoc.latitude,
+      longitude: fbDoc.longitude,
+    }));
+
+    // Hydrate cache
+    results.forEach(assessment => {
+      assessments.set(assessment.id, assessment);
+      const existing = sessionAssessments.get(sessionId) ?? [];
+      if (!existing.includes(assessment.id)) {
+        existing.push(assessment.id);
+        sessionAssessments.set(sessionId, existing);
+      }
+    });
+
+    return results;
+  }
+
+  return [];
 }
 
 /**
  * Get the latest visual assessment for a session, or null if none exists.
  */
-export function getLatestAssessment(sessionId: string): VisualAssessment | null {
-  const all = getSessionAssessments(sessionId);
-  if (all.length === 0) return null;
-  return all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+export async function getLatestAssessment(sessionId: string): Promise<VisualAssessment | null> {
+  // Try in-memory first
+  const ids = sessionAssessments.get(sessionId) ?? [];
+  if (ids.length > 0) {
+    const cached = ids.map(id => assessments.get(id)).filter(Boolean) as VisualAssessment[];
+    if (cached.length > 0) {
+      return cached.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    }
+  }
+
+  // Fall back to Firestore
+  if (isFirebaseAvailable()) {
+    const fbDoc = await fbGetLatestVisualAssessment(sessionId);
+    if (fbDoc) {
+      const assessment: VisualAssessment = {
+        id: fbDoc.id,
+        sessionId: fbDoc.sessionId,
+        createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+        soilAnalysis: fbDoc.soilAnalysis,
+        soilImageCount: fbDoc.soilImageCount,
+        cropAnalysis: fbDoc.cropAnalysis,
+        cropImageCount: fbDoc.cropImageCount,
+        overallConfidence: fbDoc.overallConfidence,
+        analysisType: fbDoc.analysisType,
+        processingTime_ms: fbDoc.processingTime_ms,
+        latitude: fbDoc.latitude,
+        longitude: fbDoc.longitude,
+      };
+      // Hydrate cache
+      assessments.set(assessment.id, assessment);
+      return assessment;
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -228,14 +352,16 @@ export function toVisualIntelligence(assessment: VisualAssessment): VisualIntell
 }
 
 /**
- * Clean up old assessments (older than 1 hour).
+ * Clean up old assessments from in-memory cache (older than 1 hour).
+ * Also triggers Firebase cleanup for expired assessments (30 days).
  * Called periodically by the session cleanup interval.
  */
-export function cleanupOldAssessments(): number {
+export async function cleanupOldAssessments(): Promise<number> {
   const oneHour = 60 * 60 * 1000;
   const now = Date.now();
   let cleaned = 0;
 
+  // Clean in-memory cache (1 hour TTL)
   for (const [id, assessment] of assessments.entries()) {
     if (now - assessment.createdAt.getTime() > oneHour) {
       assessments.delete(id);
@@ -255,7 +381,15 @@ export function cleanupOldAssessments(): number {
   }
 
   if (cleaned > 0) {
-    console.log(`[VisualAssessmentDB] Cleaned up ${cleaned} old assessments`);
+    console.log(`[VisualAssessmentDB] Cleaned up ${cleaned} old in-memory assessments`);
+  }
+
+  // Clean Firestore (30 day TTL)
+  if (isFirebaseAvailable()) {
+    const fbCleaned = await fbCleanupExpiredVisualAssessments();
+    if (fbCleaned > 0) {
+      console.log(`[VisualAssessmentDB] Cleaned up ${fbCleaned} expired assessments from Firebase`);
+    }
   }
 
   return cleaned;
