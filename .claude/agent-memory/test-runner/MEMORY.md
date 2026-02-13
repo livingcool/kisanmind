@@ -99,3 +99,46 @@ npm install --save node-cache
 - Use descriptive test names: "should X when Y"
 - Put setup code in `beforeEach()`, not at describe level
 - Keep tests independent (no shared state between tests)
+
+## Visual Assessment Feature Testing (Feb 2026)
+
+### Test Suite Status
+- ✅ Database layer (`visual-assessment-db.test.ts`): 13 tests, 100% passing
+- ✅ Type validation (`visual-intelligence.test.ts`): 12 tests, 100% passing
+- ✅ ML service logic (`test_app.py`): 3 tests, 100% passing
+- ⚠️ API routes: Not yet tested (need supertest integration)
+- ⚠️ E2E flows: Not yet tested
+
+### Mock Data Factory Pattern
+Use factory functions with partial overrides for flexible test data:
+```typescript
+const createMockAssessment = (overrides: Partial<Type> = {}): Type => ({
+  ...defaultValues,
+  ...overrides,
+});
+```
+
+### External Service Testing
+Check availability in beforeAll and skip gracefully if unavailable:
+```typescript
+beforeAll(async () => {
+  const isRunning = await isServiceRunning();
+  if (!isRunning) console.warn('Service not running...');
+});
+```
+
+### Test Case ID Pattern
+Link tests to test plan with TC IDs:
+```typescript
+it('TC4.1: should store and retrieve assessment', () => {});
+```
+
+### Performance Benchmarks
+- Database operations: <2ms
+- ML inference (Python): ~160ms
+- Type conversions: <1ms
+- Test execution: ~100ms/test average
+
+### Jest Root Configuration Issue
+Tests must be in `__tests__` directories within roots specified in jest.config.js.
+Don't create `tests/` at project root - move to component-specific `__tests__` folders.

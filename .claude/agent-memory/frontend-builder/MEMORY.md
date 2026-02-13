@@ -12,51 +12,54 @@
 - Translation files in `public/locales/{lang}/translation.json`
 - 5 languages: English, Hindi, Marathi, Tamil, Telugu
 - Language preference stored in localStorage
-- Nested translation keys for organization (e.g., `input.waterSources.borewell`)
+- Nested translation keys for organization
 
 ### 2. Mobile-First Design Principles
 - All touch targets minimum 48x48px
-- Forms optimized for vertical smartphone screens
 - Large fonts (text-base = 16px minimum)
 - High contrast colors for rural lighting conditions
-- Network optimization for 3G/4G connections
 
-### 3. Component Pattern: Form State Management
-- Auto-save to localStorage on every input change
-- Load saved data on mount for persistence
-- Validation happens on submit, not on blur (farmer-friendly)
-- Clear error messages with actionable guidance
-
-### 4. API Integration Strategy
+### 3. API Integration Strategy
 - Graceful fallback to mock data when backend unavailable
-- This enables demo mode without live orchestrator
 - Error states show helpful messages, not technical jargon
-- Polling pattern for long-running AI analysis
 
-### 5. Accessibility Standards
-- Semantic HTML5 throughout
-- ARIA labels on all interactive elements
-- Focus indicators with `focus-visible` utility
-- Color contrast meets WCAG AA
-- Screen reader compatible with proper heading hierarchy
+### 4. Leaflet Map Integration
+- Always use `dynamic()` import with `ssr: false`
+- Import Leaflet CSS in `app/layout.tsx`
+- Use divIcon for custom markers
 
-### 6. Leaflet Map Integration
-- **SSR Handling**: Always use `dynamic()` import with `ssr: false` for Leaflet components
-- **CSS Import**: Leaflet CSS imported in `app/layout.tsx`
-- **Custom Icons**: Use divIcon with inline HTML/CSS for agricultural theme (green pin)
-- **Z-index**: Set `.leaflet-container { z-index: 0 }` in globals.css
-- **Tile Layers**: OpenStreetMap for street view, Esri for satellite imagery
-- **Loading State**: Include loading spinner in dynamic import options
+### 5. Video Guidance System (NEW - Feb 2026)
+- **Location**: `components/VideoGuidance/`
+- **Purpose**: Capture 2 soil + 2 optional crop/field images
+- **Components**: VideoGuidanceSession, CameraCapture, QualityOverlay, ProgressTracker
+- **Hooks**: useVideoStream, useImageQuality, useImageUpload
+- **Integration**: Added to FarmerInputForm as optional "Take Photos" button
+- **API**: Added `visualAssessmentId` to FarmerInput interface
 
-### 7. Geocoding and Reverse Geocoding (Nominatim API)
-- **API**: OpenStreetMap Nominatim (free, no API key required)
-- **Rate Limiting**: 1 request per second (enforce with timestamp tracking)
-- **User-Agent**: Required header `'User-Agent': 'KisanMind/1.0 (Agricultural Advisory App)'`
-- **Forward Geocoding**: `/search?q={query}&format=json&addressdetails=1&countrycodes=in`
-- **Reverse Geocoding**: `/reverse?lat={lat}&lon={lon}&format=json&addressdetails=1`
-- **Auto-Trigger**: Reverse geocode automatically when coordinates are entered or updated
-- **Debouncing**: Use 1s debounce for address search to prevent rate limit violations
-- **Type Safety**: Created `lib/location-types.ts` with `AddressDetails`, `GeocodingResult`, `Coordinates` interfaces
+### 6. Camera Handling (NEW)
+- Use `facingMode: 'environment'` for rear camera on mobile
+- Handle permission errors with user-friendly messages
+- Always stop tracks in useEffect cleanup
+- Use canvas `drawImage()` + `toDataURL()` for capture
+- Compress images to <200KB before upload
+
+## File Organization
+- Pages: `app/{route}/page.tsx`
+- Components: `components/{ComponentName}.tsx`
+- Feature Components: `components/{Feature}/{ComponentName}.tsx`
+- Hooks: `components/{Feature}/hooks/use{Hook}.ts`
+- Utilities: `lib/{utility}.ts`
+
+## Video Guidance Workflow
+1. Farmer enters location
+2. "Take Photos" card appears
+3. VideoGuidanceSession opens (fullscreen)
+4. CameraCapture for each of 4 steps
+5. Real-time quality overlay (green/yellow/red)
+6. Review screen shows all captured images
+7. Upload with progress bar
+8. Success → visualAssessmentId saved
+9. Green badge shows "Visual Assessment Complete!"
 
 ## Reusable Component Patterns
 

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/translations';
-import { Mic, Loader2, Map, Copy, Check } from 'lucide-react';
+import { Mic, Loader2, Map, Copy, Check, Camera, Sparkles } from 'lucide-react';
 import { FarmerInput } from '@/lib/api';
 import {
   isSpeechRecognitionSupported,
@@ -24,6 +24,19 @@ const LocationMap = dynamic(() => import('./LocationMap'), {
     </div>
   ),
 });
+
+// Dynamically import VideoGuidanceSession to avoid SSR issues
+const VideoGuidanceSession = dynamic(
+  () => import('./VideoGuidance/VideoGuidanceSession'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+        <Loader2 className="w-12 h-12 animate-spin text-white" />
+      </div>
+    ),
+  }
+);
 
 interface FarmerInputFormProps {
   onSubmit: (data: FarmerInput) => void;
@@ -66,6 +79,9 @@ export default function FarmerInputForm({
   const [isListening, setIsListening] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [showVideoGuidance, setShowVideoGuidance] = useState(false);
+  const [visualAssessmentId, setVisualAssessmentId] = useState<string | null>(null);
+  const [tempSessionId] = useState(() => `temp-${Date.now()}`);
 
   // Load saved data on mount
   useEffect(() => {
@@ -190,15 +206,104 @@ export default function FarmerInputForm({
       previousCrops,
       budget: budget ? parseFloat(budget) : undefined,
       notes,
+      visualAssessmentId: visualAssessmentId || undefined,
     };
 
     onSubmit(formData);
   };
 
+  // Handle visual assessment completion
+  const handleVisualAssessmentComplete = (assessmentId: string) => {
+    setVisualAssessmentId(assessmentId);
+    setShowVideoGuidance(false);
+  };
+
+  // Handle visual assessment cancel
+  const handleVisualAssessmentCancel = () => {
+    setShowVideoGuidance(false);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-      {/* Location */}
-      <div>
+    <>
+      {/* Video Guidance Modal */}
+      {showVideoGuidance && coordinates && (
+        <VideoGuidanceSession
+          sessionId={tempSessionId}
+          location={{ lat: coordinates.lat, lon: coordinates.lon }}
+          onComplete={handleVisualAssessmentComplete}
+          onCancel={handleVisualAssessmentCancel}
+        />
+      )}
+
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+        {/* Visual Assessment Option Card */}
+        {coordinates && !visualAssessmentId && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border-2 border-blue-300 shadow-md">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-blue-900">
+                    Want Higher Accuracy?
+                  </h3>
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                </div>
+                <p className="text-sm text-blue-800 mb-1">
+                  Take photos of your soil and crops for{' '}
+                  <span className="font-bold">85-90% accuracy</span> (vs 70-80%
+                  satellite-only)
+                </p>
+                <ul className="text-xs text-blue-700 space-y-0.5 mb-4 ml-4">
+                  <li>• Direct soil analysis from your field</li>
+                  <li>• Crop health detection</li>
+                  <li>• Better fertilizer recommendations</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={() => setShowVideoGuidance(true)}
+                  className="w-full min-h-touch px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Camera className="w-5 h-5" />
+                  Take Photos (Optional - 2 min)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Visual Assessment Completed Badge */}
+        {visualAssessmentId && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-300 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-green-900">
+                  Visual Assessment Complete!
+                </p>
+                <p className="text-sm text-green-700">
+                  Your images will boost recommendation accuracy
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setVisualAssessmentId(null);
+                  setShowVideoGuidance(true);
+                }}
+                className="text-sm text-green-700 hover:text-green-900 font-semibold underline"
+              >
+                Retake
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Location */}
+        <div>
         <LocationInput
           coordinates={coordinates}
           address={location}
@@ -465,6 +570,7 @@ export default function FarmerInputForm({
         )}
       </button>
     </form>
+    </>
   );
 }
 

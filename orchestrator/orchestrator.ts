@@ -19,6 +19,7 @@ import type {
   FarmingDecisionReport,
   OrchestratorConfig,
   MCPServerResponse,
+  VisualIntelligence,
 } from './types.js';
 import { IntakeAgent } from './intake-agent.js';
 import { SynthesisAgent } from './synthesis-agent.js';
@@ -50,7 +51,18 @@ export interface PipelineResult {
     synthesisTime_ms: number;
     mcpSuccessCount: number;
     mcpFailedServers: string[];
+    hasVisualData: boolean;
   };
+}
+
+/**
+ * Optional visual intelligence data that can be provided to the pipeline.
+ * When available, this is included as a 6th intelligence source alongside
+ * the 5 MCP servers.
+ */
+export interface PipelineOptions {
+  /** Pre-computed visual intelligence from farmer-uploaded images */
+  visualIntelligence?: VisualIntelligence | null;
 }
 
 export class Orchestrator {
@@ -82,10 +94,19 @@ export class Orchestrator {
    *
    * Returns a PipelineResult with both the report and timing metadata.
    * For backward compatibility, the process() method returns just the report.
+   *
+   * @param farmerInput - Raw farmer input text
+   * @param options - Optional pipeline options (e.g., visual intelligence data)
    */
-  async processWithMeta(farmerInput: string): Promise<PipelineResult> {
+  async processWithMeta(farmerInput: string, options?: PipelineOptions): Promise<PipelineResult> {
     const pipelineStart = Date.now();
-    this.reportProgress('start', 'Starting KisanMind pipeline', { input: farmerInput });
+    const visualIntel = options?.visualIntelligence ?? null;
+    const hasVisualData = visualIntel !== null;
+
+    this.reportProgress('start', 'Starting KisanMind pipeline', {
+      input: farmerInput,
+      hasVisualData,
+    });
 
     try {
       // STAGE 1: Parse farmer input with Haiku 4.5
@@ -103,23 +124,28 @@ export class Orchestrator {
       });
 
       // STAGE 2: Call all 5 MCP servers in parallel
-      this.reportProgress('mcp-start', 'Calling 5 MCP servers in parallel...', {
-        servers: ['soil', 'water', 'climate', 'market', 'schemes'],
+      const serverList = ['soil', 'water', 'climate', 'market', 'schemes'];
+      if (hasVisualData) {
+        serverList.push('visual');
+      }
+      this.reportProgress('mcp-start', `Calling ${serverList.length} intelligence sources in parallel...`, {
+        servers: serverList,
       });
 
       const mcpStart = Date.now();
-      const intelligence = await this.gatherIntelligence(profile);
+      const intelligence = await this.gatherIntelligence(profile, visualIntel);
       const mcpTime = Date.now() - mcpStart;
 
-      this.reportProgress('mcp-complete', 'All MCP servers responded', {
+      this.reportProgress('mcp-complete', 'All intelligence sources responded', {
         successful: intelligence.orchestrationMeta.successfulServers,
         failed: intelligence.orchestrationMeta.failedServers,
+        hasVisualData: intelligence.orchestrationMeta.hasVisualData,
         totalTime_ms: mcpTime,
       });
 
       // Check if we have enough data to proceed
-      if (intelligence.orchestrationMeta.successfulServers === 0) {
-        this.reportProgress('mcp-warning', 'All MCP servers failed - synthesis will use model knowledge only');
+      if (intelligence.orchestrationMeta.successfulServers === 0 && !hasVisualData) {
+        this.reportProgress('mcp-warning', 'All intelligence sources failed - synthesis will use model knowledge only');
       }
 
       // STAGE 3: Synthesize final report with Opus 4.6 + extended thinking
@@ -145,6 +171,7 @@ export class Orchestrator {
         intakeTime_ms: intakeTime,
         mcpTime_ms: mcpTime,
         synthesisTime_ms: synthesisTime,
+        hasVisualData,
         recommendation: report.primaryRecommendation,
       });
 
@@ -158,6 +185,7 @@ export class Orchestrator {
           synthesisTime_ms: synthesisTime,
           mcpSuccessCount: intelligence.orchestrationMeta.successfulServers,
           mcpFailedServers: intelligence.orchestrationMeta.failedServers,
+          hasVisualData,
         },
       };
     } catch (error) {
@@ -170,21 +198,37 @@ export class Orchestrator {
   /**
    * Backward-compatible process method that returns just the report
    */
-  async process(farmerInput: string): Promise<FarmingDecisionReport> {
-    const result = await this.processWithMeta(farmerInput);
+  async process(farmerInput: string, options?: PipelineOptions): Promise<FarmingDecisionReport> {
+    const result = await this.processWithMeta(farmerInput, options);
     return result.report;
   }
 
   /**
-   * Gather intelligence from all 5 MCP servers in parallel.
+   * Gather intelligence from all 5 MCP servers in parallel, plus optional
+   * visual intelligence from farmer-uploaded images.
    *
    * Uses Promise.allSettled() so that failures in one server never
    * prevent other servers from completing. Each server also has an
    * independent timeout via withTimeout().
+   *
+   * @param profile - Farmer profile from intake agent
+   * @param visualIntel - Optional pre-computed visual intelligence data
    */
-  private async gatherIntelligence(profile: FarmerProfile): Promise<AggregatedIntelligence> {
+  private async gatherIntelligence(
+    profile: FarmerProfile,
+    visualIntel?: VisualIntelligence | null,
+  ): Promise<AggregatedIntelligence> {
     const start = Date.now();
     const timeout = this.config.mcpServerTimeout_ms;
+
+    // Log visual data availability
+    if (visualIntel) {
+      this.reportProgress('visual', 'Visual intelligence data available', {
+        hasSoilData: visualIntel.hasSoilData,
+        hasCropData: visualIntel.hasCropData,
+        confidence: visualIntel.overallConfidence,
+      });
+    }
 
     // Launch all 5 MCP server calls in parallel using Promise.allSettled
     // This ensures one slow/failed server does not block others
@@ -236,7 +280,9 @@ export class Orchestrator {
       .filter(r => r.status === 'error' || r.status === 'timeout')
       .map(r => r.server);
 
-    console.log(`[Orchestrator] MCP servers completed in ${totalTime}ms: ${successfulServers} succeeded, ${failedServers.length} failed`);
+    const hasVisualData = visualIntel !== null && visualIntel !== undefined;
+    const sourceCount = hasVisualData ? '5 MCP + visual' : '5 MCP';
+    console.log(`[Orchestrator] ${sourceCount} sources completed in ${totalTime}ms: ${successfulServers} MCP succeeded, ${failedServers.length} MCP failed${hasVisualData ? ', visual data included' : ''}`);
 
     return {
       farmerProfile: profile,
@@ -245,11 +291,13 @@ export class Orchestrator {
       climateIntel,
       marketIntel,
       schemeIntel,
+      visualIntel: visualIntel ?? null,
       orchestrationMeta: {
         totalTime_ms: totalTime,
         successfulServers,
         failedServers,
         timestamp: new Date().toISOString(),
+        hasVisualData,
       },
     };
   }

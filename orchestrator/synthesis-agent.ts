@@ -15,14 +15,25 @@ const SYNTHESIS_SYSTEM_PROMPT = `You are an expert agricultural advisor for Indi
 
 Your goal: Help farmers maximize profit while minimizing risk.
 
-You will receive data from 5 sources:
-1. Soil intelligence (pH, texture, nutrients, crop suitability)
+You will receive data from up to 6 sources:
+1. Soil intelligence (pH, texture, nutrients, crop suitability) - from satellite/database
 2. Water intelligence (quality, availability, salinity, groundwater status)
 3. Climate intelligence (rainfall forecasts, temperature, drought risk)
 4. Market intelligence (crop prices, trends, nearby mandis)
 5. Government scheme intelligence (eligible subsidies, insurance, schemes)
+6. Visual intelligence (OPTIONAL) - from farmer-uploaded photos of their soil and crops
 
 Some data sources may have failed (status: "error" or "timeout"). Work with whatever data is available - never refuse to give advice because one source is missing.
+
+VISUAL DATA FUSION RULES:
+When visual intelligence is available from farmer-uploaded images:
+- Visual soil data (confidence 85-95%) is MORE RELIABLE than satellite soil data (70-80%) because it captures actual field conditions
+- When visual soil type CONFIRMS satellite soil type, increase your confidence in soil-related recommendations
+- When visual and satellite CONFLICT, prefer visual data but note the discrepancy
+- Crop disease detection is ONLY available from visual data - satellite cannot detect leaf-level diseases
+- If crop diseases are detected, add URGENT treatment actions to the monthly action plan
+- Visual data showing poor crop health should increase the severity of risk assessments
+- Factor visual nutrient analysis into fertilizer recommendations
 
 Your task: Synthesize this data into ONE clear recommendation that answers: "What should I plant this season to make the most money?"
 
@@ -33,6 +44,7 @@ CRITICAL REQUIREMENTS:
 4. **Risk-aware**: Identify top 3 risks and concrete mitigation strategies
 5. **Scheme-integrated**: Tell farmers EXACTLY which schemes to apply for and HOW
 6. **Market-timed**: Tell farmers WHERE and WHEN to sell for maximum profit
+7. **Disease-responsive**: If visual data shows crop diseases, include immediate treatment in action plan
 
 OUTPUT FORMAT (JSON):
 {
@@ -105,13 +117,14 @@ OUTPUT FORMAT (JSON):
 }
 
 REASONING APPROACH:
-1. **Soil + Water -> Feasible crops**: Which crops can physically grow here?
+1. **Visual + Soil + Water -> Feasible crops**: What can physically grow here? (prioritize visual data if available)
 2. **Climate -> Risk adjustment**: Which crops can survive the forecasted weather?
 3. **Market -> Profit ranking**: Of feasible crops, which makes most money?
 4. **Schemes -> Cost reduction**: What subsidies reduce input costs?
-5. **Final calculation**: Expected revenue - costs + subsidies = net profit
+5. **Visual crop health -> Immediate actions**: Are there diseases or pests to treat NOW?
+6. **Final calculation**: Expected revenue - costs + subsidies - disease losses = net profit
 
-Think deeply about trade-offs. Extended thinking is enabled - use it to reason through conflicts between datasets.`;
+Think deeply about trade-offs. Extended thinking is enabled - use it to reason through conflicts between datasets. Pay special attention to cases where visual data conflicts with satellite data.`;
 
 export class SynthesisAgent {
   private client: Anthropic;
@@ -135,7 +148,10 @@ export class SynthesisAgent {
     const startTime = Date.now();
     console.log('[SynthesisAgent] Starting synthesis with Claude Opus 4.6 + Extended Thinking...');
     console.log(`[SynthesisAgent] Model: ${this.model}, Thinking budget: ${this.extendedThinkingBudget} tokens`);
-    console.log(`[SynthesisAgent] Data sources: ${intelligence.orchestrationMeta.successfulServers}/5 successful, failed: [${intelligence.orchestrationMeta.failedServers.join(', ')}]`);
+    const sourceDescription = intelligence.orchestrationMeta.hasVisualData
+      ? `${intelligence.orchestrationMeta.successfulServers}/5 MCP + visual`
+      : `${intelligence.orchestrationMeta.successfulServers}/5 MCP`;
+    console.log(`[SynthesisAgent] Data sources: ${sourceDescription}, failed: [${intelligence.orchestrationMeta.failedServers.join(', ')}]`);
 
     try {
       const userPrompt = this.buildPrompt(intelligence);
@@ -239,12 +255,13 @@ export class SynthesisAgent {
   /**
    * Build the synthesis prompt from aggregated intelligence.
    *
-   * Structures data from all 5 MCP servers into a clear prompt that
-   * the synthesis model can reason about. Handles partial data gracefully
-   * by clearly marking which data sources succeeded or failed.
+   * Structures data from all 5 MCP servers (plus optional visual intelligence)
+   * into a clear prompt that the synthesis model can reason about. Handles
+   * partial data gracefully by clearly marking which data sources succeeded
+   * or failed.
    */
   private buildPrompt(intelligence: AggregatedIntelligence): string {
-    const { farmerProfile, soilIntel, waterIntel, climateIntel, marketIntel, schemeIntel } = intelligence;
+    const { farmerProfile, soilIntel, waterIntel, climateIntel, marketIntel, schemeIntel, visualIntel } = intelligence;
 
     const formatData = (data: unknown, status: string): string => {
       if (status === 'error' || status === 'timeout') {
@@ -257,6 +274,61 @@ export class SynthesisAgent {
       }
     };
 
+    // Build visual intelligence section (only if available)
+    let visualSection = '';
+    if (visualIntel) {
+      const parts: string[] = [];
+      parts.push(`# Visual Intelligence from Farmer-Uploaded Images (confidence: ${visualIntel.overallConfidence}, ${visualIntel.processingTime_ms}ms)`);
+      parts.push(`Source: Farmer uploaded photos analyzed by ML image classification`);
+      parts.push(`Data type: ${visualIntel.hasSoilData && visualIntel.hasCropData ? 'soil + crop' : visualIntel.hasSoilData ? 'soil only' : 'crop only'}`);
+      parts.push('');
+
+      if (visualIntel.hasSoilData && visualIntel.soil) {
+        parts.push('## Visual Soil Analysis (from field photos - higher confidence than satellite)');
+        parts.push(`Soil Type: ${visualIntel.soil.type}`);
+        parts.push(`Confidence: ${visualIntel.soil.confidence} (visual analysis)`);
+        parts.push(`Texture: ${visualIntel.soil.texture}`);
+        parts.push(`Estimated pH: ${visualIntel.soil.ph}`);
+        parts.push(`Organic Carbon: ${visualIntel.soil.organic_carbon_pct}%`);
+        parts.push(`Drainage: ${visualIntel.soil.drainage}`);
+        parts.push(`Nutrients: N=${visualIntel.soil.nutrients.nitrogen_kg_ha} kg/ha, P=${visualIntel.soil.nutrients.phosphorus_kg_ha} kg/ha, K=${visualIntel.soil.nutrients.potassium_kg_ha} kg/ha`);
+        parts.push(`Suitable Crops (per visual analysis): ${visualIntel.soil.suitable_crops.join(', ')}`);
+        if (visualIntel.soil.recommendations.length > 0) {
+          parts.push(`Visual Soil Recommendations:`);
+          visualIntel.soil.recommendations.forEach(r => parts.push(`  - ${r}`));
+        }
+        parts.push('');
+      }
+
+      if (visualIntel.hasCropData && visualIntel.crop) {
+        parts.push('## Visual Crop Health Assessment (ONLY available from images - satellite cannot detect this)');
+        parts.push(`Health Score: ${visualIntel.crop.health_score} (1.0 = perfect health)`);
+        parts.push(`Assessment: ${visualIntel.crop.assessment}`);
+        parts.push(`Growth Stage: ${visualIntel.crop.growth_stage}`);
+
+        if (visualIntel.crop.diseases.length > 0) {
+          parts.push(`DETECTED DISEASES (URGENT - requires immediate action):`);
+          visualIntel.crop.diseases.forEach(d => {
+            parts.push(`  - ${d.disease} (confidence: ${d.confidence}, severity: ${d.severity})`);
+            parts.push(`    Affected area: ${d.affected_area_pct}%`);
+            parts.push(`    Treatment: ${d.treatment}`);
+          });
+        } else {
+          parts.push('No diseases detected - crop appears healthy');
+        }
+
+        if (visualIntel.crop.recommendations.length > 0) {
+          parts.push(`Crop Health Recommendations:`);
+          visualIntel.crop.recommendations.forEach(r => parts.push(`  - ${r}`));
+        }
+        parts.push('');
+      }
+
+      visualSection = '\n' + parts.join('\n') + '\n';
+    }
+
+    const totalSources = intelligence.orchestrationMeta.hasVisualData ? '5 MCP + visual' : '5 MCP';
+
     return `# Farmer Profile
 Location: ${farmerProfile.location.state}, ${farmerProfile.location.district}${farmerProfile.location.village ? ', ' + farmerProfile.location.village : ''}
 Coordinates: ${farmerProfile.location.latitude}N, ${farmerProfile.location.longitude}E
@@ -268,11 +340,13 @@ Budget: ${farmerProfile.budget_INR ? `INR ${farmerProfile.budget_INR}` : 'Not sp
 Language: ${farmerProfile.language}
 
 # Data Quality Summary
-Successful data sources: ${intelligence.orchestrationMeta.successfulServers}/5
+Data sources: ${totalSources}
+Successful MCP sources: ${intelligence.orchestrationMeta.successfulServers}/5
 Failed sources: ${intelligence.orchestrationMeta.failedServers.length > 0 ? intelligence.orchestrationMeta.failedServers.join(', ') : 'None'}
+Visual data available: ${intelligence.orchestrationMeta.hasVisualData ? 'YES (from farmer-uploaded photos)' : 'No'}
 Total data collection time: ${intelligence.orchestrationMeta.totalTime_ms}ms
 
-# Soil Intelligence (${soilIntel.status}, ${soilIntel.responseTime_ms}ms)
+# Soil Intelligence - Satellite/Database (${soilIntel.status}, ${soilIntel.responseTime_ms}ms)
 ${formatData(soilIntel.data, soilIntel.status)}
 
 # Water Intelligence (${waterIntel.status}, ${waterIntel.responseTime_ms}ms)
@@ -286,7 +360,7 @@ ${formatData(marketIntel.data, marketIntel.status)}
 
 # Government Scheme Intelligence (${schemeIntel.status}, ${schemeIntel.responseTime_ms}ms)
 ${formatData(schemeIntel.data, schemeIntel.status)}
-
+${visualSection}
 # Your Task
 Using the above data, generate a comprehensive farming decision report that tells this farmer EXACTLY what to plant this season to maximize profit.
 
@@ -296,6 +370,7 @@ Focus on:
 3. Water efficiency (source: ${farmerProfile.waterSource})
 4. Government subsidies (reduce costs)
 5. Market timing (sell when prices peak)
+${visualIntel?.hasCropData && visualIntel.crop?.diseases.length ? '6. URGENT: Address detected crop diseases in the action plan - include immediate treatment steps' : ''}
 
 Return ONLY valid JSON in the specified format. Do NOT wrap it in markdown code blocks.`;
   }

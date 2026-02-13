@@ -47,7 +47,50 @@ export interface MCPServerResponse {
 }
 
 /**
- * Aggregated data from all 5 MCP servers
+ * Visual intelligence from farmer-uploaded images (soil photos, crop photos).
+ * Produced by the ML inference service and stored by the API server.
+ * This is an optional 6th intelligence source -- the system works fine without it.
+ */
+export interface VisualIntelligence {
+  hasSoilData: boolean;
+  hasCropData: boolean;
+
+  soil: {
+    type: string;
+    confidence: number;
+    texture: string;
+    ph: number;
+    organic_carbon_pct: number;
+    drainage: string;
+    nutrients: {
+      nitrogen_kg_ha: number;
+      phosphorus_kg_ha: number;
+      potassium_kg_ha: number;
+    };
+    suitable_crops: string[];
+    recommendations: string[];
+  } | null;
+
+  crop: {
+    health_score: number;
+    assessment: string;
+    growth_stage: string;
+    diseases: Array<{
+      disease: string;
+      confidence: number;
+      severity: string;
+      affected_area_pct: number;
+      treatment: string;
+    }>;
+    recommendations: string[];
+  } | null;
+
+  overallConfidence: number;
+  processingTime_ms: number;
+}
+
+/**
+ * Aggregated data from all 5 MCP servers plus optional visual intelligence
  */
 export interface AggregatedIntelligence {
   farmerProfile: FarmerProfile;
@@ -56,11 +99,14 @@ export interface AggregatedIntelligence {
   climateIntel: MCPServerResponse;
   marketIntel: MCPServerResponse;
   schemeIntel: MCPServerResponse;
+  /** Optional visual intelligence from farmer-uploaded images */
+  visualIntel: VisualIntelligence | null;
   orchestrationMeta: {
     totalTime_ms: number;
     successfulServers: number;
     failedServers: string[];
     timestamp: string;
+    hasVisualData: boolean;
   };
 }
 

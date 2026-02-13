@@ -10,7 +10,7 @@
  *   const report = await orchestrator.process("I am a farmer from Vidarbha...");
  */
 import dotenv from 'dotenv';
-import { Orchestrator, type ProgressCallback, type PipelineResult } from './orchestrator.js';
+import { Orchestrator, type ProgressCallback, type PipelineResult, type PipelineOptions } from './orchestrator.js';
 import type { OrchestratorConfig, FarmingDecisionReport } from './types.js';
 
 // Load environment variables
@@ -149,4 +149,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 // Public API exports
 export { Orchestrator };
-export type { ProgressCallback, PipelineResult, OrchestratorConfig, FarmingDecisionReport };
+export type { ProgressCallback, PipelineResult, PipelineOptions, OrchestratorConfig, FarmingDecisionReport };
+export type { VisualIntelligence, AggregatedIntelligence } from './types.js';

@@ -70,11 +70,13 @@ const MOCK_INTELLIGENCE: AggregatedIntelligence = {
   climateIntel: makeMCPResponse('mcp-climate-intel'),
   marketIntel: makeMCPResponse('mcp-market-intel'),
   schemeIntel: makeMCPResponse('mcp-scheme-intel'),
+  visualIntel: null,
   orchestrationMeta: {
     totalTime_ms: 2000,
     successfulServers: 5,
     failedServers: [],
     timestamp: new Date().toISOString(),
+    hasVisualData: false,
   },
 };
 
@@ -281,6 +283,7 @@ describe('SynthesisAgent', () => {
           successfulServers: 3,
           failedServers: ['mcp-soil-intel', 'mcp-water-intel'],
           timestamp: new Date().toISOString(),
+          hasVisualData: false,
         },
       };
 

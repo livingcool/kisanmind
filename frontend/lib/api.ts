@@ -18,6 +18,7 @@ export interface FarmerInput {
   previousCrops: string[];
   budget?: number;
   notes?: string;
+  visualAssessmentId?: string; // Optional visual assessment ID from image analysis
 }
 
 export interface AgentStatus {
@@ -96,6 +97,35 @@ export interface MandiLocation {
     unit: string;
     date: string;
   }>;
+}
+
+// Visual Assessment types
+export interface VisualAssessmentResult {
+  id: string;
+  sessionId: string;
+  soilAnalysis?: {
+    soilType: string;
+    color: string;
+    texture: string;
+    moisture: string;
+    healthScore: number;
+    recommendations: string[];
+  };
+  cropAnalysis?: {
+    cropType: string;
+    healthStatus: string;
+    diseases: string[];
+    pests: string[];
+    recommendations: string[];
+  };
+  fieldAnalysis?: {
+    fieldCondition: string;
+    irrigationStatus: string;
+    recommendations: string[];
+  };
+  confidence: number;
+  timestamp: string;
+  status: 'processing' | 'completed' | 'error';
 }
 
 // API client with error handling
@@ -440,4 +470,37 @@ export function getMockFarmingPlan(): FarmingPlan {
       ],
     },
   };
+}
+
+/**
+ * Get visual assessment by ID
+ */
+export async function getVisualAssessment(
+  assessmentId: string
+): Promise<VisualAssessmentResult> {
+  try {
+    const response = await apiClient.get<VisualAssessmentResult>(
+      `/api/visual-assessment/${assessmentId}`
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to get visual assessment');
+  }
+}
+
+/**
+ * Get latest visual assessment for a session
+ */
+export async function getLatestVisualAssessment(
+  sessionId: string
+): Promise<VisualAssessmentResult | null> {
+  try {
+    const response = await apiClient.get<VisualAssessmentResult>(
+      `/api/visual-assessment/session/${sessionId}/latest`
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get latest visual assessment:', error);
+    return null;
+  }
 }
