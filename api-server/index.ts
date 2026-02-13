@@ -175,7 +175,7 @@ app.get('/api/farming-plan/:sessionId', (req: Request, res: Response) => {
     });
   }
 
-  // Return completed report with transformation
+  // Return completed report (already transformed when stored)
   res.json({
     sessionId,
     status: 'completed',
@@ -184,7 +184,7 @@ app.get('/api/farming-plan/:sessionId', (req: Request, res: Response) => {
       status: 'completed' as const,
       progress: 100,
     })) || [],
-    synthesis: transformOrchestratorReport(session.report),
+    synthesis: session.report,
   });
 });
 
