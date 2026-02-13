@@ -1,5 +1,21 @@
 services:
-  # KisanMind API Server
+  # ML Inference Service (Python FastAPI)
+  - type: web
+    name: kisanmind-ml-service
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: services/ml-inference
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: PORT
+        value: "8100"
+
+  # KisanMind API Server (Node.js + Express)
   - type: web
     name: kisanmind-api
     runtime: node
@@ -11,7 +27,24 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "3001"
       - key: ANTHROPIC_API_KEY
         sync: false  # Set this manually in Render dashboard
       - key: FRONTEND_URL
         value: https://kisanmind.vercel.app
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: kisanmind-ml-service
+          property: url
+      # Firebase Configuration (set manually in Render dashboard)
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      # Alternative: Base64-encoded service account JSON
+      - key: FIREBASE_SERVICE_ACCOUNT_BASE64
+        sync: false
