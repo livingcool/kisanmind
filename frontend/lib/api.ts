@@ -101,7 +101,7 @@ export interface MandiLocation {
 // API client with error handling
 const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 300000, // 5 minutes - synthesis with extended thinking takes ~3 minutes
   headers: {
     'Content-Type': 'application/json',
   },
