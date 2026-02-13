@@ -27,9 +27,38 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.FRONTEND_URL || '*'
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // In development, allow localhost
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    // In production, allow production URL and all Vercel preview URLs
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      /https:\/\/.*\.vercel\.app$/, // Allow all Vercel preview deployments
+    ];
+
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 };
 app.use(cors(corsOptions));
