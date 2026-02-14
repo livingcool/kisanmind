@@ -43,7 +43,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: MAX_FILE_SIZE,
-    files: 5, // Max 5 images per request
+    files: 10, // Max 10 images per request (soil + crop + field)
   },
   fileFilter: (_req, file, cb) => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
@@ -164,6 +164,7 @@ visualAssessmentRouter.post(
   upload.fields([
     { name: 'soilImages', maxCount: 3 },
     { name: 'cropImages', maxCount: 3 },
+    { name: 'fieldImages', maxCount: 3 },
   ]),
   async (req: Request, res: Response) => {
     const startTime = Date.now();
@@ -180,12 +181,15 @@ visualAssessmentRouter.post(
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
       const soilImages = files?.['soilImages'] ?? [];
       const cropImages = files?.['cropImages'] ?? [];
+      const fieldImages = files?.['fieldImages'] ?? [];
 
-      if (soilImages.length === 0 && cropImages.length === 0) {
+      if (soilImages.length === 0 && cropImages.length === 0 && fieldImages.length === 0) {
         return res.status(400).json({
-          error: 'No images provided. Upload soilImages and/or cropImages.',
+          error: 'No images provided. Upload soilImages, cropImages, and/or fieldImages.',
         });
       }
+
+      console.log(`[VisualAssessment] Received ${soilImages.length} soil, ${cropImages.length} crop, ${fieldImages.length} field images`);
 
       // Check ML service availability
       const mlAvailable = await isMLServiceAvailable();
@@ -304,10 +308,11 @@ visualAssessmentRouter.post(
       // Store in database (now async with Firebase)
       await storeAssessment(assessment);
 
-      // Return results
+      // Return results (frontend expects 'id' not 'assessmentId')
       res.json({
         status: 'success',
-        assessmentId,
+        id: assessmentId, // Frontend looks for result.id
+        assessmentId, // Also include for backward compatibility
         sessionId,
         analysisType,
         processingTime_ms: totalProcessingTime,

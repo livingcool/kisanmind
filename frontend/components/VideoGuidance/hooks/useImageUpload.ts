@@ -138,6 +138,7 @@ export function useImageUpload() {
       // Separate images by type
       const soilImages = images.filter((img) => img.type === 'soil');
       const cropImages = images.filter((img) => img.type === 'crop');
+      const waterImages = images.filter((img) => img.type === 'water');
       const fieldImages = images.filter((img) => img.type === 'field');
 
       // Compress and add soil images
@@ -154,6 +155,14 @@ export function useImageUpload() {
         const compressed = await compressImage(img.dataUrl);
         const blob = dataURLtoBlob(compressed);
         formData.append('cropImages', blob, `crop_${img.id}.jpg`);
+      }
+
+      // Compress and add water images (sent as field images for now)
+      setProgress(50);
+      for (const img of waterImages) {
+        const compressed = await compressImage(img.dataUrl);
+        const blob = dataURLtoBlob(compressed);
+        formData.append('fieldImages', blob, `water_${img.id}.jpg`);
       }
 
       // Compress and add field images
