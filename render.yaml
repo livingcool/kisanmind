@@ -37,7 +37,7 @@ services:
         fromService:
           type: web
           name: kisanmind-ml-service
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL
       # Firebase Configuration (set manually in Render dashboard)
       - key: FIREBASE_PROJECT_ID
         sync: false
