@@ -12,26 +12,53 @@ jobs:
 
     steps:
       - name: Ping ML Service
+        continue-on-error: true
         run: |
           echo "Pinging ML Service..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 https://kisanmind-ml-service.onrender.com/health)
-          echo "ML Service responded with: $response"
-          if [ "$response" = "200" ]; then
-            echo "✅ ML Service is alive"
-          else
-            echo "⚠️ ML Service returned: $response"
-          fi
+          echo "Note: First wake-up can take 2-3 minutes on Render free tier"
+
+          # Try 3 times with increasing timeouts
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 30 --max-time 180 https://kisanmind-ml-service.onrender.com/health || echo "000")
+
+            if [ "$response" = "200" ]; then
+              echo "✅ ML Service is alive (attempt $attempt)"
+              exit 0
+            else
+              echo "⚠️ ML Service returned: $response (attempt $attempt)"
+              if [ $attempt -lt 3 ]; then
+                echo "Waiting 30 seconds before retry..."
+                sleep 30
+              fi
+            fi
+          done
+
+          echo "⚠️ ML Service did not respond after 3 attempts (may be sleeping - will retry in 10 minutes)"
 
       - name: Ping API Server
+        continue-on-error: true
         run: |
           echo "Pinging API Server..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://kisanmind-api.onrender.com/health)
-          echo "API Server responded with: $response"
-          if [ "$response" = "200" ]; then
-            echo "✅ API Server is alive"
-          else
-            echo "⚠️ API Server returned: $response"
-          fi
+
+          # Try 2 times
+          for attempt in 1 2; do
+            echo "Attempt $attempt..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 90 https://kisanmind-api.onrender.com/health || echo "000")
+
+            if [ "$response" = "200" ]; then
+              echo "✅ API Server is alive (attempt $attempt)"
+              exit 0
+            else
+              echo "⚠️ API Server returned: $response (attempt $attempt)"
+              if [ $attempt -lt 2 ]; then
+                echo "Waiting 20 seconds before retry..."
+                sleep 20
+              fi
+            fi
+          done
+
+          echo "⚠️ API Server did not respond after 2 attempts (may be sleeping - will retry in 10 minutes)"
 
       - name: Summary
         run: |
