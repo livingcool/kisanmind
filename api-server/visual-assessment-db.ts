@@ -21,6 +21,7 @@ import {
   getSessionVisualAssessments as fbGetSessionVisualAssessments,
   getLatestVisualAssessment as fbGetLatestVisualAssessment,
   cleanupExpiredVisualAssessments as fbCleanupExpiredVisualAssessments,
+  toDate,
 } from './firebase.js';
 
 // ---------------------------------------------------------------------------
@@ -205,7 +206,7 @@ export async function getAssessment(id: string): Promise<VisualAssessment | null
       const assessment: VisualAssessment = {
         id: fbDoc.id,
         sessionId: fbDoc.sessionId,
-        createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+        createdAt: toDate(fbDoc.createdAt),
         soilAnalysis: fbDoc.soilAnalysis,
         soilImageCount: fbDoc.soilImageCount,
         cropAnalysis: fbDoc.cropAnalysis,
@@ -242,7 +243,7 @@ export async function getSessionAssessments(sessionId: string): Promise<VisualAs
     const results: VisualAssessment[] = fbDocs.map(fbDoc => ({
       id: fbDoc.id,
       sessionId: fbDoc.sessionId,
-      createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+      createdAt: toDate(fbDoc.createdAt),
       soilAnalysis: fbDoc.soilAnalysis,
       soilImageCount: fbDoc.soilImageCount,
       cropAnalysis: fbDoc.cropAnalysis,
@@ -290,7 +291,7 @@ export async function getLatestAssessment(sessionId: string): Promise<VisualAsse
       const assessment: VisualAssessment = {
         id: fbDoc.id,
         sessionId: fbDoc.sessionId,
-        createdAt: fbDoc.createdAt instanceof Date ? fbDoc.createdAt : new Date(fbDoc.createdAt),
+        createdAt: toDate(fbDoc.createdAt),
         soilAnalysis: fbDoc.soilAnalysis,
         soilImageCount: fbDoc.soilImageCount,
         cropAnalysis: fbDoc.cropAnalysis,

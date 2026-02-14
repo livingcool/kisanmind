@@ -21,6 +21,24 @@ import type {
 const logger = new Logger('SchemeAnalyzer');
 
 /**
+ * Safely retrieve state-specific schemes with graceful fallback.
+ * Returns an empty array (not an error) when a state has no specific scheme data.
+ */
+function getStateSchemes(stateName: string): GovernmentScheme[] {
+  const schemes = STATE_SCHEMES[stateName];
+
+  if (schemes) {
+    return schemes;
+  }
+
+  // Log missing state data for future expansion
+  logger.warn(`[Scheme Analyzer] No specific schemes for state: ${stateName}, using central schemes only`);
+
+  // Return empty array - central schemes will still be included
+  return [];
+}
+
+/**
  * Filter schemes based on farmer profile
  */
 function filterEligibleSchemes(
@@ -29,11 +47,9 @@ function filterEligibleSchemes(
 ): GovernmentScheme[] {
   const schemes: GovernmentScheme[] = [...CENTRAL_SCHEMES];
 
-  // Add state-specific schemes
-  const stateSchemes = STATE_SCHEMES[state];
-  if (stateSchemes) {
-    schemes.push(...stateSchemes);
-  }
+  // Add state-specific schemes (graceful fallback if state not found)
+  const stateSchemes = getStateSchemes(state);
+  schemes.push(...stateSchemes);
 
   // Filter based on farmer category
   const category = profile.landSize_acres !== undefined
@@ -207,10 +223,38 @@ function generateRecommendations(
     recs.push('As a small farmer, you qualify for higher subsidy rates on micro-irrigation and farm equipment.');
   }
 
-  if (state === 'Maharashtra') {
-    recs.push('Maharashtra farmers: Check MAHA-DBT portal for additional state subsidies (mahadbt.maharashtra.gov.in).');
-  } else if (state === 'Telangana') {
-    recs.push('Telangana farmers: Ensure Rythu Bandhu registration is active for INR 10,000/acre/season support.');
+  // State-specific recommendations
+  const stateRecs: Record<string, string> = {
+    'Maharashtra': 'Maharashtra farmers: Check MAHA-DBT portal for additional state subsidies (mahadbt.maharashtra.gov.in).',
+    'Telangana': 'Telangana farmers: Ensure Rythu Bandhu registration is active for INR 10,000/acre/season support.',
+    'Andhra Pradesh': 'AP farmers: Visit your nearest RBK (Rythu Bharosa Kendra) for YSR Rythu Bharosa and free crop insurance.',
+    'Tamil Nadu': 'Tamil Nadu farmers: Register at Uzhavar Sandhai for direct market access and better prices.',
+    'Karnataka': 'Karnataka farmers: Check Raita Mitra portal (raitamitra.karnataka.gov.in) for all state schemes.',
+    'Uttar Pradesh': 'UP farmers: Register on upagriculture.com for seed and fertilizer subsidies.',
+    'Gujarat': 'Gujarat farmers: Use i-Khedut portal (ikhedut.gujarat.gov.in) for all subsidy applications.',
+    'Punjab': 'Punjab farmers: Register on Punjab Farmers Portal for crop diversification incentives.',
+    'Haryana': 'Haryana farmers: Register on Meri Fasal Mera Byora (fasal.haryana.gov.in) for MSP procurement.',
+    'Madhya Pradesh': 'MP farmers: PM-KISAN beneficiaries automatically get extra INR 4,000/year from Mukhyamantri Kisan Kalyan Yojana.',
+    'Rajasthan': 'Rajasthan farmers: Apply for water harvesting subsidy at rajkisan.rajasthan.gov.in.',
+    'West Bengal': 'West Bengal farmers: Register for Krishak Bandhu scheme at krishakbandhu.net.',
+    'Bihar': 'Bihar farmers: Apply at dbtagriculture.bihar.gov.in for diesel subsidy and input support.',
+    'Odisha': 'Odisha farmers: Apply for KALIA scheme at kalia.odisha.gov.in for cultivation support.',
+    'Chhattisgarh': 'Chhattisgarh farmers: Register for Rajiv Gandhi Kisan Nyay Yojana for input subsidy.',
+    'Jharkhand': 'Jharkhand farmers: Verify Mukhyamantri Krishi Ashirwad Yojana enrollment at block office.',
+    'Kerala': 'Kerala farmers: Visit your local Krishi Bhavan for crop insurance and subsidized inputs.',
+    'Assam': 'Assam farmers: Contact district agriculture office for CMSGUY mechanization support.',
+  };
+
+  const stateRec = stateRecs[state];
+  if (stateRec) {
+    recs.push(stateRec);
+  } else if (state !== 'India') {
+    // Graceful fallback for states without specific scheme data
+    recs.push(
+      `State-specific scheme data for ${state} is being updated. ` +
+      'Please check with your local agriculture office for additional state-level schemes and subsidies. ' +
+      'Central government schemes (PM-KISAN, PMFBY, KCC) are available in all states.'
+    );
   }
 
   recs.push('Visit your nearest KVK (Krishi Vigyan Kendra) for free technical guidance and training programs.');

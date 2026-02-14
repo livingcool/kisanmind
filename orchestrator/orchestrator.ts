@@ -63,6 +63,12 @@ export interface PipelineResult {
 export interface PipelineOptions {
   /** Pre-computed visual intelligence from farmer-uploaded images */
   visualIntelligence?: VisualIntelligence | null;
+  /** Explicit location override (bypasses intake agent extraction) */
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
 }
 
 export class Orchestrator {
@@ -101,11 +107,13 @@ export class Orchestrator {
   async processWithMeta(farmerInput: string, options?: PipelineOptions): Promise<PipelineResult> {
     const pipelineStart = Date.now();
     const visualIntel = options?.visualIntelligence ?? null;
+    const locationOverride = options?.location ?? null;
     const hasVisualData = visualIntel !== null;
 
     this.reportProgress('start', 'Starting KisanMind pipeline', {
       input: farmerInput,
       hasVisualData,
+      hasLocationOverride: !!locationOverride,
     });
 
     try {
@@ -118,9 +126,26 @@ export class Orchestrator {
         1 // Only 1 retry for intake
       );
       const intakeTime = Date.now() - intakeStart;
+
+      // Apply location override if provided
+      if (locationOverride) {
+        console.log(`[Orchestrator] Applying location override: ${locationOverride.latitude}, ${locationOverride.longitude}`);
+        profile.location.latitude = locationOverride.latitude;
+        profile.location.longitude = locationOverride.longitude;
+        if (locationOverride.address) {
+          // Try to parse basic address components if available
+          // This is a simple heuristic; the coordinates are the most important part
+          const parts = locationOverride.address.split(',').map((p: string) => p.trim());
+          if (parts.length > 0) profile.location.village = parts[0];
+          if (parts.length > 1) profile.location.district = parts[parts.length - 2] || parts[0];
+          if (parts.length > 2) profile.location.state = parts[parts.length - 1];
+        }
+      }
+
       this.reportProgress('intake-complete', 'Farmer profile extracted', {
         profile,
         time_ms: intakeTime,
+        locationOverridden: !!locationOverride,
       });
 
       // STAGE 2: Call all 5 MCP servers in parallel

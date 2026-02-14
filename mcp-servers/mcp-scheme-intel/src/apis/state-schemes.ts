@@ -28,28 +28,34 @@ export function getStateSchemesData(state: string): {
   creditFacilities.push(...getCommonCreditFacilities());
 
   // Add state-specific schemes
-  switch (state) {
-    case 'Maharashtra':
-      schemes.push(...getMaharashtraSchemes());
-      subsidies.push(...getMaharashtraSubsidies());
-      break;
-    case 'Punjab':
-      schemes.push(...getPunjabSchemes());
-      break;
-    case 'Uttar Pradesh':
-      schemes.push(...getUttarPradeshSchemes());
-      break;
-    case 'Karnataka':
-      schemes.push(...getKarnatakaSchemes());
-      break;
-    case 'Tamil Nadu':
-      schemes.push(...getTamilNaduSchemes());
-      break;
-    case 'Madhya Pradesh':
-      schemes.push(...getMadhyaPradeshSchemes());
-      break;
-    default:
-      logger.info(`Using default schemes for state: ${state}`);
+  const stateSchemeProviders: Record<string, () => { schemes?: GovernmentScheme[]; subsidies?: SubsidyInfo[] }> = {
+    'Maharashtra': () => ({ schemes: getMaharashtraSchemes(), subsidies: getMaharashtraSubsidies() }),
+    'Punjab': () => ({ schemes: getPunjabSchemes() }),
+    'Uttar Pradesh': () => ({ schemes: getUttarPradeshSchemes() }),
+    'Karnataka': () => ({ schemes: getKarnatakaSchemes() }),
+    'Tamil Nadu': () => ({ schemes: getTamilNaduSchemes() }),
+    'Madhya Pradesh': () => ({ schemes: getMadhyaPradeshSchemes() }),
+    'Gujarat': () => ({ schemes: getGujaratSchemes() }),
+    'Haryana': () => ({ schemes: getHaryanaSchemes() }),
+    'Rajasthan': () => ({ schemes: getRajasthanSchemes() }),
+    'Telangana': () => ({ schemes: getTelanganaSchemes() }),
+    'Andhra Pradesh': () => ({ schemes: getAndhraPradeshSchemes() }),
+    'West Bengal': () => ({ schemes: getWestBengalSchemes() }),
+    'Bihar': () => ({ schemes: getBiharSchemes() }),
+    'Odisha': () => ({ schemes: getOdishaSchemes() }),
+    'Chhattisgarh': () => ({ schemes: getChhattisgarhSchemes() }),
+    'Jharkhand': () => ({ schemes: getJharkhandSchemes() }),
+    'Assam': () => ({ schemes: getAssamSchemes() }),
+    'Kerala': () => ({ schemes: getKeralaSchemes() }),
+  };
+
+  const provider = stateSchemeProviders[state];
+  if (provider) {
+    const result = provider();
+    if (result.schemes) schemes.push(...result.schemes);
+    if (result.subsidies) subsidies.push(...result.subsidies);
+  } else {
+    logger.warn(`[State Schemes] No specific schemes for state: ${state}, using central schemes only`);
   }
 
   return { schemes, subsidies, creditFacilities };
@@ -273,6 +279,7 @@ function getTamilNaduSchemes(): GovernmentScheme[] {
 
 /**
  * Madhya Pradesh-specific schemes
+ * Source: https://mpkrishi.mp.gov.in (Official MP Agriculture Portal)
  */
 function getMadhyaPradeshSchemes(): GovernmentScheme[] {
   return [
@@ -286,6 +293,334 @@ function getMadhyaPradeshSchemes(): GovernmentScheme[] {
       deadline: null,
       website: 'https://mpkrishi.mp.gov.in',
       annualBenefit_INR: 4000,
+    },
+    {
+      name: 'Bhavantar Bhugtan Yojana',
+      category: 'income_support',
+      description: 'Price deficit payment scheme - government compensates when market price falls below MSP',
+      benefit: 'Difference between MSP and market price paid directly to farmer',
+      eligibility: ['All farmers in MP growing notified crops', 'Must sell through registered mandi'],
+      howToApply: 'Register on mpeuparjan.nic.in and sell through registered mandi',
+      deadline: 'Registration before each procurement season',
+      website: 'https://mpeuparjan.nic.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Gujarat-specific schemes
+ * Source: https://agri.gujarat.gov.in (Official Gujarat Agriculture Dept)
+ */
+function getGujaratSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Mukhyamantri Kisan Sahay Yojana',
+      category: 'insurance',
+      description: 'Crop insurance for natural calamities including drought, excess rainfall, and unseasonal rain',
+      benefit: '₹20,000/hectare for 33-60% damage, ₹25,000/hectare for above 60% damage',
+      eligibility: ['All farmers in Gujarat growing notified crops', 'No premium payment required'],
+      howToApply: 'Automatic enrollment for registered farmers via eGram center or i-Khedut portal',
+      deadline: 'Before kharif/rabi season',
+      website: 'https://agri.gujarat.gov.in',
+      annualBenefit_INR: null,
+    },
+    {
+      name: 'i-Khedut Portal Subsidy Schemes',
+      category: 'subsidy',
+      description: 'Comprehensive portal for Gujarat agriculture subsidies: farm equipment, irrigation, horticulture',
+      benefit: '50-75% subsidy on farm equipment, drip irrigation, greenhouse, and more',
+      eligibility: ['All farmers in Gujarat with Aadhaar and land records'],
+      howToApply: 'Apply online at ikhedut.gujarat.gov.in',
+      deadline: 'Varies by scheme - check portal',
+      website: 'https://ikhedut.gujarat.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Haryana-specific schemes
+ * Source: https://agriharyana.gov.in (Official Haryana Agriculture Dept)
+ */
+function getHaryanaSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Meri Fasal Mera Byora',
+      category: 'marketing',
+      description: 'Online farmer registration for MSP procurement and government scheme benefits in Haryana',
+      benefit: 'Guaranteed MSP procurement, access to all state subsidies through single registration',
+      eligibility: ['All farmers in Haryana'],
+      howToApply: 'Register at fasal.haryana.gov.in with Aadhaar, land records, and bank details',
+      deadline: 'Before each crop season',
+      website: 'https://fasal.haryana.gov.in',
+      annualBenefit_INR: null,
+    },
+    {
+      name: 'Bhavantar Bharpai Yojana',
+      category: 'income_support',
+      description: 'Price deficit compensation for horticulture crops when market price falls below protected price',
+      benefit: 'Compensation for difference between protected price and actual selling price',
+      eligibility: ['Farmers growing notified horticulture crops', 'Must sell through designated mandis'],
+      howToApply: 'Register on Meri Fasal Mera Byora portal',
+      deadline: 'Before harvest season',
+      website: 'https://fasal.haryana.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Rajasthan-specific schemes
+ * Source: https://rajkisan.rajasthan.gov.in (Official Rajasthan Agriculture Portal)
+ */
+function getRajasthanSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Mukhyamantri Krishak Sathi Yojana',
+      category: 'insurance',
+      description: 'Financial assistance for accidental death or injury during farming activities',
+      benefit: '₹2,00,000 for accidental death, ₹50,000-2,00,000 for injuries',
+      eligibility: ['All farmers and agricultural laborers in Rajasthan aged 5-70 years'],
+      howToApply: 'Apply through district agriculture officer within 6 months of incident',
+      deadline: 'Within 6 months of incident',
+      website: 'https://rajkisan.rajasthan.gov.in',
+      annualBenefit_INR: null,
+    },
+    {
+      name: 'Rajasthan Water Harvesting Subsidy',
+      category: 'irrigation',
+      description: 'Subsidy for water harvesting structures in arid/semi-arid areas',
+      benefit: 'Up to 60% subsidy (max ₹1,00,000) on water harvesting structures',
+      eligibility: ['Farmers in arid and semi-arid districts of Rajasthan'],
+      howToApply: 'Apply through rajkisan.rajasthan.gov.in portal',
+      deadline: 'Subject to annual budget allocation',
+      website: 'https://rajkisan.rajasthan.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Telangana-specific schemes
+ * Source: https://rythubandhu.telangana.gov.in (Official Telangana Portal)
+ */
+function getTelanganaSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Rythu Bandhu',
+      category: 'income_support',
+      description: 'Investment support of ₹10,000 per acre per season for all landholding farmers',
+      benefit: '₹10,000/acre/season (₹20,000/acre/year) directly to bank account',
+      eligibility: ['All landholding farmers in Telangana', 'No ceiling on land area'],
+      howToApply: 'Automatic payment to registered farmers. Register at local MRO office',
+      deadline: 'Automatic seasonal payment',
+      website: 'https://rythubandhu.telangana.gov.in',
+      annualBenefit_INR: 20000,
+    },
+    {
+      name: 'Rythu Bima',
+      category: 'insurance',
+      description: 'Free life insurance of ₹5 lakh for enrolled Rythu Bandhu farmer families (age 18-59)',
+      benefit: '₹5,00,000 life insurance coverage at no cost to farmer',
+      eligibility: ['All Rythu Bandhu beneficiaries aged 18-59 years'],
+      howToApply: 'Automatic enrollment for Rythu Bandhu beneficiaries',
+      deadline: 'Automatic enrollment',
+      website: 'https://rythubandhu.telangana.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Andhra Pradesh-specific schemes
+ * Source: https://www.apagrisnet.gov.in (Official AP Agriculture Portal)
+ */
+function getAndhraPradeshSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'YSR Rythu Bharosa',
+      category: 'income_support',
+      description: 'Investment support of ₹13,500 per year combining state and PM-KISAN benefits',
+      benefit: '₹13,500/year (₹7,500 state + ₹6,000 PM-KISAN)',
+      eligibility: ['All farmers in AP with cultivable land', 'Must be PM-KISAN beneficiary'],
+      howToApply: 'Apply at village/ward secretariat or Meeseva centers',
+      deadline: 'Open enrollment',
+      website: 'https://ysrrythubharosa.ap.gov.in',
+      annualBenefit_INR: 13500,
+    },
+    {
+      name: 'YSR Free Crop Insurance',
+      category: 'insurance',
+      description: 'State pays farmer share of PMFBY premium, making crop insurance free',
+      benefit: 'Free crop insurance - state pays farmer premium share',
+      eligibility: ['All farmers in AP enrolled in PMFBY'],
+      howToApply: 'Automatic enrollment through RBKs (Rythu Bharosa Kendras)',
+      deadline: 'Before sowing season',
+      website: 'https://www.apagrisnet.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * West Bengal-specific schemes
+ * Source: https://krishakbandhu.net (Official WB Portal)
+ */
+function getWestBengalSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Krishak Bandhu Scheme',
+      category: 'income_support',
+      description: 'Financial assistance for farming families - crop investment support and death benefit',
+      benefit: '₹10,000/year for farmers with 1+ acre, ₹4,000/year for below 1 acre. ₹2,00,000 death benefit.',
+      eligibility: ['All farmers in West Bengal with recorded farmland'],
+      howToApply: 'Apply through Krishak Bandhu portal or block development office',
+      deadline: 'Open enrollment',
+      website: 'https://krishakbandhu.net',
+      annualBenefit_INR: 10000,
+    },
+  ];
+}
+
+/**
+ * Bihar-specific schemes
+ * Source: https://dbtagriculture.bihar.gov.in (Official Bihar Agriculture DBT Portal)
+ */
+function getBiharSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Bihar Krishi Input Subsidy Scheme',
+      category: 'subsidy',
+      description: 'Financial assistance to farmers affected by natural calamities for crop loss',
+      benefit: '₹6,800/hectare for rainfed, ₹13,500/hectare for irrigated crops (max 2 hectares)',
+      eligibility: ['Farmers in declared disaster-affected areas of Bihar'],
+      howToApply: 'Apply on dbtagriculture.bihar.gov.in within 15 days of declaration',
+      deadline: 'Within 15 days of calamity declaration',
+      website: 'https://dbtagriculture.bihar.gov.in',
+      annualBenefit_INR: null,
+    },
+    {
+      name: 'Bihar Diesel Subsidy Scheme',
+      category: 'subsidy',
+      description: 'Subsidy on diesel for irrigation during kharif and rabi seasons',
+      benefit: '₹75/liter diesel subsidy for irrigation (max 10 liters/acre kharif, 8 liters rabi)',
+      eligibility: ['All farmers in Bihar'],
+      howToApply: 'Apply on dbtagriculture.bihar.gov.in with land records and Aadhaar',
+      deadline: 'During cropping season',
+      website: 'https://dbtagriculture.bihar.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Odisha-specific schemes
+ * Source: https://kalia.odisha.gov.in (Official KALIA Portal)
+ */
+function getOdishaSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'KALIA (Krushak Assistance for Livelihood and Income Augmentation)',
+      category: 'income_support',
+      description: 'Financial assistance for small/marginal farmers and landless agricultural households',
+      benefit: '₹4,000 per season (2 seasons) for cultivation support',
+      eligibility: ['Small and marginal farmers in Odisha', 'Landless agricultural households'],
+      howToApply: 'Apply through KALIA portal or block agriculture office',
+      deadline: 'Before each crop season',
+      website: 'https://kalia.odisha.gov.in',
+      annualBenefit_INR: 8000,
+    },
+  ];
+}
+
+/**
+ * Chhattisgarh-specific schemes
+ * Source: https://rgkny.cg.nic.in (Official CG Portal)
+ */
+function getChhattisgarhSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Rajiv Gandhi Kisan Nyay Yojana',
+      category: 'income_support',
+      description: 'Input subsidy for paddy farmers and crop diversification incentive',
+      benefit: '₹9,000/acre/year for paddy, ₹10,000/acre for diversification to pulses/oilseeds',
+      eligibility: ['All farmers in Chhattisgarh registered for the scheme'],
+      howToApply: 'Register through cooperative societies or district agriculture office',
+      deadline: 'Before each season',
+      website: 'https://rgkny.cg.nic.in',
+      annualBenefit_INR: 9000,
+    },
+  ];
+}
+
+/**
+ * Jharkhand-specific schemes
+ * Source: https://mmkay.jharkhand.gov.in (Official Jharkhand Portal)
+ */
+function getJharkhandSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Mukhyamantri Krishi Ashirwad Yojana',
+      category: 'income_support',
+      description: 'Pre-sowing financial support for small and marginal farmers',
+      benefit: '₹5,000 per acre per year (max 5 acres)',
+      eligibility: ['Small and marginal farmers in Jharkhand with land up to 5 acres'],
+      howToApply: 'Automatic enrollment through land records. Verify at block agriculture office',
+      deadline: 'Automatic enrollment',
+      website: 'https://mmkay.jharkhand.gov.in',
+      annualBenefit_INR: 5000,
+    },
+  ];
+}
+
+/**
+ * Assam-specific schemes
+ * Source: https://diaboroagri.assam.gov.in (Official Assam Agriculture Portal)
+ */
+function getAssamSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Chief Minister Samagra Gramya Unnayan Yojana',
+      category: 'subsidy',
+      description: 'Integrated rural development including agriculture mechanization subsidy',
+      benefit: 'Subsidized farm implements, support for organic farming',
+      eligibility: ['All farmers in Assam registered with local revenue circle'],
+      howToApply: 'Apply through district agriculture office or CMSGUY portal',
+      deadline: 'Subject to fund availability',
+      website: 'https://diaboroagri.assam.gov.in',
+      annualBenefit_INR: null,
+    },
+  ];
+}
+
+/**
+ * Kerala-specific schemes
+ * Source: https://keralaagriculture.gov.in (Official Kerala Agriculture Portal)
+ */
+function getKeralaSchemes(): GovernmentScheme[] {
+  return [
+    {
+      name: 'Kerala State Crop Insurance Scheme',
+      category: 'insurance',
+      description: 'State-funded crop insurance covering seasonal and perennial crops at low premium',
+      benefit: 'Coverage of crop loss at low premium (2% for food crops, 5% for commercial)',
+      eligibility: ['All farmers in Kerala growing notified crops'],
+      howToApply: 'Apply through Krishi Bhavan or agricultural officer',
+      deadline: 'Before each crop season',
+      website: 'https://keralaagriculture.gov.in',
+      annualBenefit_INR: null,
+    },
+    {
+      name: 'Subhiksha Keralam',
+      category: 'subsidy',
+      description: 'State scheme to increase food crop production through subsidized inputs',
+      benefit: 'Free seeds, subsidized fertilizers, and support for paddy cultivation',
+      eligibility: ['All farmers in Kerala cultivating food crops'],
+      howToApply: 'Register at local Krishi Bhavan',
+      deadline: 'Before each season',
+      website: 'https://keralaagriculture.gov.in',
+      annualBenefit_INR: null,
     },
   ];
 }

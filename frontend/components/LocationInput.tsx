@@ -17,6 +17,17 @@ interface LocationInputProps {
   error?: string;
 }
 
+// Dynamically import LocationMap to avoid SSR issues with Leaflet
+import dynamic from 'next/dynamic';
+const LocationMap = dynamic(() => import('./LocationMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[300px] bg-gray-100 rounded-xl">
+      <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+    </div>
+  ),
+});
+
 export default function LocationInput({
   coordinates,
   address,
@@ -24,7 +35,8 @@ export default function LocationInput({
   onAddressChange,
   onAddressDetailsChange,
   error,
-}: LocationInputProps) {
+  addressDetails,
+}: LocationInputProps & { addressDetails?: AddressDetails | null }) {
   const { t } = useTranslation();
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -230,6 +242,14 @@ export default function LocationInput({
   };
 
   /**
+   * Handle map location selection
+   */
+  const handleMapSelect = (lat: number, lon: number) => {
+    onCoordinatesChange({ lat, lon });
+    reverseGeocode(lat, lon);
+  };
+
+  /**
    * Auto-reverse geocode when coordinates change externally
    */
   useEffect(() => {
@@ -291,6 +311,41 @@ export default function LocationInput({
         <Info className="w-4 h-4" />
         {t('input.locationHelper')}
       </p>
+
+      {/* Full Address (if no detailed breakdown available) */}
+      {!addressDetails && address && (
+        <div className="mb-4 bg-white rounded-lg p-4 border border-green-200">
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Address:</span> {address}
+          </p>
+          {coordinates && (
+            <p className="text-sm text-gray-600 mt-2">
+              <span className="font-semibold">Coordinates:</span>{' '}
+              {coordinates.lat.toFixed(6)}, {coordinates.lon.toFixed(6)}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Map Preview - Always Visible */}
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {coordinates ? 'Selected Location' : 'Select Location on Map'}
+        </label>
+        <div className="rounded-xl overflow-hidden shadow-lg border border-gray-200">
+          <LocationMap
+            coordinates={coordinates || { lat: 20.5937, lon: 78.9629 }} // Default to India center
+            address={coordinates ? address : undefined}
+            height="300px"
+            showSatellite={false}
+            zoom={coordinates ? 15 : 5}
+            onLocationSelect={handleMapSelect}
+          />
+          <p className="text-xs text-gray-500 mt-2 p-1 text-center bg-gray-50">
+            {coordinates ? 'Tap elsewhere to change location' : 'Tap on map to pin your farm location'}
+          </p>
+        </div>
+      </div>
 
       {/* Loading Status */}
       {isReverseGeocoding && (

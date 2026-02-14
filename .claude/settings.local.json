@@ -37,7 +37,21 @@
       "Bash(timeout:*)",
       "Bash(tee:*)",
       "Bash(py:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(kaggle datasets list:*)",
+      "Bash(kaggle datasets download:*)",
+      "Bash(unzip:*)",
+      "Bash(python -m pip:*)",
+      "Bash(ping:*)",
+      "Bash(tasklist:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx next dev:*)",
+      "Bash(break)",
+      "Bash(fi)",
+      "Bash(__NEW_LINE_82483e38168faf6a__ if [ \"$STATUS\" = \"error\" ])",
+      "Bash(then)",
+      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npx jest:*)"
     ]
   }
 }

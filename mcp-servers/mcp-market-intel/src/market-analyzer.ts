@@ -156,20 +156,35 @@ function generateProfitEstimates(state: string): ProfitEstimate[] {
 function generateRecommendations(
   profitEstimates: ProfitEstimate[],
   nearbyMandis: MandiInfo[],
-  _state: string
+  state: string
 ): string[] {
   const recs: string[] = [];
 
   // Top 3 most profitable crops
   const topCrops = profitEstimates.slice(0, 3);
-  recs.push(
-    `Top 3 crops by profit potential: ${topCrops.map(c => `${c.crop} (INR ${Math.round(c.estimatedProfit_per_acre).toLocaleString()}/acre)`).join(', ')}`
-  );
+  if (topCrops.length > 0) {
+    recs.push(
+      `Top 3 crops by profit potential: ${topCrops.map(c => `${c.crop} (INR ${Math.round(c.estimatedProfit_per_acre).toLocaleString()}/acre)`).join(', ')}`
+    );
+  }
 
   // Nearest mandi
   if (nearbyMandis.length > 0) {
     const nearest = nearbyMandis[0];
     recs.push(`Nearest market: ${nearest.name}, ${nearest.district} (${nearest.distance_km}km). Major crops: ${nearest.majorCrops.join(', ')}`);
+
+    // Warn if nearest mandi is very far (suggests sparse coverage area)
+    if (nearest.distance_km !== null && nearest.distance_km > 200) {
+      recs.push(
+        `Note: The nearest mandi in our database is ${nearest.distance_km}km away. ` +
+        'There may be closer local mandis not yet in our system. Check with your local agriculture office.'
+      );
+    }
+  } else {
+    recs.push(
+      `Mandi data for ${state} is being expanded. ` +
+      'Contact your local agriculture office or visit enam.gov.in to find the nearest registered mandi.'
+    );
   }
 
   // MSP advice

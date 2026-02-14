@@ -12,6 +12,7 @@ interface LocationMapProps {
   height?: string;
   showSatellite?: boolean;
   zoom?: number;
+  onLocationSelect?: (lat: number, lon: number) => void;
 }
 
 export default function LocationMap({
@@ -20,6 +21,7 @@ export default function LocationMap({
   height = '300px',
   showSatellite = false,
   zoom = 13,
+  onLocationSelect,
 }: LocationMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +102,16 @@ export default function LocationMap({
       icon: customIcon,
     }).addTo(map);
 
+    // Handle map clicks
+    if (onLocationSelect) {
+      map.on('click', (e: L.LeafletMouseEvent) => {
+        onLocationSelect(e.latlng.lat, e.latlng.lng);
+      });
+
+      // Change cursor to pointer to indicate interactivity
+      map.getContainer().style.cursor = 'crosshair';
+    }
+
     // Add popup with address if provided
     if (address) {
       marker.bindPopup(`
@@ -120,7 +132,7 @@ export default function LocationMap({
         mapRef.current = null;
       }
     };
-  }, [coordinates.lat, coordinates.lon, address, showSatellite, zoom]);
+  }, [coordinates.lat, coordinates.lon, address, showSatellite, zoom, onLocationSelect]);
 
   return (
     <div

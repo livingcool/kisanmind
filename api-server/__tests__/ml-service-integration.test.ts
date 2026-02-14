@@ -13,52 +13,35 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8100';
 // Helper to create test images programmatically using PNG data structure
 // Creates minimal valid PNG files with solid colors
 function createTestImage(color: [number, number, number], width = 200, height = 200): Buffer {
-  // Create a simple PNG with solid color
-  // This is a minimal PNG file structure
-  const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  // Use pre-generated 1x1 pixel PNGs for specific test colors
+  const colorKey = color.join(',');
+  let base64 = '';
 
-  // For simplicity, create a 1x1 pixel PNG and let PIL scale it
-  const ihdr = Buffer.concat([
-    Buffer.from([0, 0, 0, 13]), // Length: 13
-    Buffer.from('IHDR'),
-    Buffer.from([0, 0, 0, 1]), // Width: 1
-    Buffer.from([0, 0, 0, 1]), // Height: 1
-    Buffer.from([8, 2, 0, 0, 0]), // Bit depth: 8, Color type: 2 (RGB), Compression: 0, Filter: 0, Interlace: 0
-  ]);
+  switch (colorKey) {
+    case '30,25,20': // Dark
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGOQkxQBAACkAEwTa6+2AAAAAElFTkSuQmCC';
+      break;
+    case '180,80,60': // Red
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYEmADAAL8AUETUyShAAAAAElFTkSuQmCC';
+      break;
+    case '220,210,180': // Bright
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO4c2kLAATwAmP4hnYBAAAAAElFTkSuQmCC';
+      break;
+    case '50,160,50': // Green
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGMwWmAEAAIMAQWxtRjrAAAAAElFTkSuQmCC';
+      break;
+    case '150,90,50': // Brown
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGOYFmUEAAKsASPJthiHAAAAAElFTkSuQmCC';
+      break;
+    case '230,230,225': // White
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGN49uwhAAVjAq6Fv8IzAAAAAElFTkSuQmCC';
+      break;
+    default:
+      // Fallback (red-ish)
+      base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYEmADAAL8AUETUyShAAAAAElFTkSuQmCC';
+  }
 
-  // Calculate CRC for IHDR
-  const ihdrCrc = Buffer.from([0, 0, 0, 0]); // Simplified - real PNG would calculate CRC32
-
-  // IDAT chunk with pixel data
-  const pixelData = Buffer.from([0, ...color]); // Filter byte + RGB
-  const idat = Buffer.concat([
-    Buffer.from([0, 0, 0, pixelData.length]), // Length
-    Buffer.from('IDAT'),
-    pixelData,
-  ]);
-  const idatCrc = Buffer.from([0, 0, 0, 0]);
-
-  // IEND chunk
-  const iend = Buffer.concat([
-    Buffer.from([0, 0, 0, 0]), // Length: 0
-    Buffer.from('IEND'),
-    Buffer.from([0xAE, 0x42, 0x60, 0x82]), // CRC
-  ]);
-
-  // Note: This creates an invalid PNG but we'll use a better approach
-  // Instead, create base64 encoded minimal valid PNG
-
-  // Actually, let's use a minimal valid PNG template
-  // This is a 1x1 pixel PNG with color that can be modified
-  const pngTemplate = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN' +
-    'k+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    'base64'
-  );
-
-  // For testing purposes, return template PNG
-  // The ML service will accept this and analyze it
-  return pngTemplate;
+  return Buffer.from(base64, 'base64');
 }
 
 // Helper to check if ML service is running
@@ -122,7 +105,7 @@ describe('ML Service Integration Tests', () => {
       }
 
       const response = await fetch(`${ML_SERVICE_URL}/health`);
-      const data = await response.json();
+      const data = await response.json() as any;
 
       expect(response.status).toBe(200);
       expect(data.status).toBe('healthy');
@@ -151,9 +134,9 @@ describe('ML Service Integration Tests', () => {
       expect(result.result.soil_type).toBeTruthy();
       expect(result.result.confidence).toBeGreaterThanOrEqual(0.6);
       expect(result.result.confidence).toBeLessThanOrEqual(0.96);
-      expect(result.result.suitable_crops).toBeInstanceOf(Array);
+      expect(Array.isArray(result.result.suitable_crops)).toBe(true);
       expect(result.result.suitable_crops.length).toBeGreaterThan(0);
-      expect(result.result.recommendations).toBeInstanceOf(Array);
+      expect(Array.isArray(result.result.recommendations)).toBe(true);
       expect(result.processing_time_ms).toBeLessThan(1000);
     });
 
@@ -173,9 +156,14 @@ describe('ML Service Integration Tests', () => {
       expect(result.result.estimated_ph).toBeGreaterThan(0);
       expect(result.result.organic_carbon_pct).toBeGreaterThan(0);
       expect(result.result.drainage).toBeTruthy();
-      expect(result.result.nutrients).toHaveProperty('nitrogen_kg_ha');
-      expect(result.result.nutrients).toHaveProperty('phosphorus_kg_ha');
-      expect(result.result.nutrients).toHaveProperty('potassium_kg_ha');
+      expect(result.result.nutrients.nitrogen_kg_ha).toBeDefined();
+      expect(result.result.nutrients.phosphorus_kg_ha).toBeDefined();
+      expect(result.result.nutrients.potassium_kg_ha).toBeDefined();
+      expect(Array.isArray(result.result.suitable_crops)).toBe(true);
+      expect(Array.isArray(result.result.common_regions)).toBe(true);
+      expect(Array.isArray(result.result.recommendations)).toBe(true);
+      expect(result.result.image_analysis).toBeDefined();
+      expect(typeof result.result.image_analysis.brightness).toBe('number');
     });
 
     it('TC2.3: should classify bright image as Sandy Loam', async () => {
@@ -272,7 +260,7 @@ describe('ML Service Integration Tests', () => {
       expect(result.result.health_score).toBeLessThanOrEqual(1.0);
       expect(result.result.assessment).toBeTruthy();
       expect(result.result.growth_stage).toBeTruthy();
-      expect(result.result.recommendations).toBeInstanceOf(Array);
+      expect(Array.isArray(result.result.recommendations)).toBe(true);
     });
 
     it('TC2.8: should detect disease in brown image', async () => {
@@ -286,7 +274,7 @@ describe('ML Service Integration Tests', () => {
       const result = await callMLService('analyze-crop', brownImage);
 
       expect(result.status).toBe('success');
-      expect(result.result.detected_diseases).toBeInstanceOf(Array);
+      expect(Array.isArray(result.result.detected_diseases)).toBe(true);
       // Brown image likely triggers disease detection
       expect(result.result.disease_count).toBeGreaterThanOrEqual(0);
       if (result.result.disease_count > 0) {
@@ -308,7 +296,7 @@ describe('ML Service Integration Tests', () => {
       const result = await callMLService('analyze-crop', whiteImage);
 
       expect(result.status).toBe('success');
-      expect(result.result.detected_diseases).toBeInstanceOf(Array);
+      expect(Array.isArray(result.result.detected_diseases)).toBe(true);
       // Bright/white images may trigger powdery mildew detection
       if (result.result.disease_count > 0) {
         const diseases = result.result.detected_diseases.map((d: any) => d.disease);
@@ -338,7 +326,9 @@ describe('ML Service Integration Tests', () => {
       ];
 
       for (const field of requiredFields) {
-        expect(result.result).toHaveProperty(field);
+        for (const field of requiredFields) {
+          expect(result.result[field]).toBeDefined();
+        }
       }
     });
   });

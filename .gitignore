@@ -51,3 +51,42 @@ orchestrator/output-report.json
 
 # Temporary files
 nul
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+venv/
+env/
+ENV/
+
+# ML Models and Datasets (large files)
+models/
+datasets/
+*.h5
+*.keras
+*.pkl
+*.pt
+*.pth
+*.onnx
+
+# ML Service logs and temp files
+services/ml-inference/ml-service.log
+services/ml-inference/test_service.log
+services/ml-inference/*.log
+services/ml-inference/.claude/
+
+# Test images and generated files
+test_images_base64.txt
+test_soil.png
+test_*.jpg
+test_*.png
+
+# System startup logs
+api-server/api-server.log
+frontend/frontend.log

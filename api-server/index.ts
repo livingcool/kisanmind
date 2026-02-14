@@ -18,7 +18,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import {
   initializeFirebase,
   isFirebaseAvailable,
@@ -32,6 +32,7 @@ import {
   type SessionStatus,
 } from './firebase.js';
 import { visualAssessmentRouter } from './visual-assessment-routes.js';
+import { videoGuidanceRouter } from './video-guidance-routes.js';
 import { cleanupOldAssessments, getLatestAssessment, toVisualIntelligence } from './visual-assessment-db.js';
 
 // Get __dirname equivalent in ES modules
@@ -89,10 +90,13 @@ const corsOptions = {
   credentials: true
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased for base64 frame data
 
 // Visual assessment routes (image upload for soil/crop analysis)
 app.use('/api/visual-assessment', visualAssessmentRouter);
+
+// Video guidance routes (audio-guided capture flow)
+app.use('/api/guidance', videoGuidanceRouter);
 
 // ---------------------------------------------------------------------------
 // In-memory fallback storage
@@ -171,8 +175,18 @@ async function loadSession(sessionId: string): Promise<InMemorySession | null> {
 
 async function initOrchestrator() {
   try {
+    // Determine path based on whether we are in dev (src) or prod (dist)
+    const orchestratorPath = __dirname.includes('dist')
+      ? path.resolve(__dirname, '../../orchestrator/dist/index.js')
+      : path.resolve(__dirname, '../orchestrator/dist/index.js');
+
+    // Convert to file URL for dynamic import (required for ESM)
+    const moduleUrl = pathToFileURL(orchestratorPath).href;
+
+    console.log(`[API] Loading orchestrator from: ${moduleUrl}`);
+
     // @ts-ignore - Dynamic import resolved at runtime
-    const module = await import('../orchestrator/dist/index.js');
+    const module = await import(moduleUrl);
     createOrchestrator = module.createOrchestrator;
     console.log('[API] Orchestrator module loaded successfully');
   } catch (error) {
@@ -477,9 +491,21 @@ async function processfarmerInput(sessionId: string, input: any) {
       console.log(`[API] Visual intelligence available for session ${sessionId}: soil=${visualIntelligence.hasSoilData}, crop=${visualIntelligence.hasCropData}, confidence=${visualIntelligence.overallConfidence}`);
     }
 
-    // Process the input with optional visual intelligence
+    // Extract location override from input if available
+    let locationOverride = undefined;
+    if (input.location?.coordinates) {
+      locationOverride = {
+        latitude: input.location.coordinates.lat,
+        longitude: input.location.coordinates.lon,
+        address: input.location.address,
+      };
+      console.log(`[API] Using explicit location: ${locationOverride.latitude}, ${locationOverride.longitude}`);
+    }
+
+    // Process the input with optional visual intelligence and location override
     const result = await orchestrator.processWithMeta(inputText, {
       visualIntelligence,
+      location: locationOverride,
     });
 
     // Transform orchestrator format to frontend format

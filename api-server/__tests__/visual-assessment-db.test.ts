@@ -92,26 +92,26 @@ describe('Visual Assessment Database', () => {
   });
 
   describe('Storage Operations', () => {
-    it('TC4.1: should store assessment and make it retrievable by ID', () => {
+    it('TC4.1: should store assessment and make it retrievable by ID', async () => {
       const assessment = createMockAssessment();
       storeAssessment(assessment);
 
-      const retrieved = getAssessment(assessment.id);
+      const retrieved = await getAssessment(assessment.id);
       expect(retrieved).not.toBeNull();
       expect(retrieved?.id).toBe(assessment.id);
       expect(retrieved?.sessionId).toBe(assessment.sessionId);
       expect(retrieved?.soilAnalysis?.soil_type).toBe('Black Cotton Soil (Vertisol)');
     });
 
-    it('TC4.2: should store multiple assessments and retrieve all', () => {
+    it('TC4.2: should store multiple assessments and retrieve all', async () => {
       const assessment1 = createMockAssessment();
       const assessment2 = createMockAssessment();
 
       storeAssessment(assessment1);
       storeAssessment(assessment2);
 
-      const retrieved1 = getAssessment(assessment1.id);
-      const retrieved2 = getAssessment(assessment2.id);
+      const retrieved1 = await getAssessment(assessment1.id);
+      const retrieved2 = await getAssessment(assessment2.id);
 
       expect(retrieved1).not.toBeNull();
       expect(retrieved2).not.toBeNull();
@@ -119,7 +119,7 @@ describe('Visual Assessment Database', () => {
       expect(retrieved2?.id).toBe(assessment2.id);
     });
 
-    it('TC4.3: should update session index when storing with same sessionId', () => {
+    it('TC4.3: should update session index when storing with same sessionId', async () => {
       const sessionId = `session-${Date.now()}`;
       const assessment1 = createMockAssessment({ sessionId });
       const assessment2 = createMockAssessment({ sessionId });
@@ -127,7 +127,7 @@ describe('Visual Assessment Database', () => {
       storeAssessment(assessment1);
       storeAssessment(assessment2);
 
-      const sessionAssessments = getSessionAssessments(sessionId);
+      const sessionAssessments = await getSessionAssessments(sessionId);
       expect(sessionAssessments.length).toBe(2);
       expect(sessionAssessments.map(a => a.id)).toContain(assessment1.id);
       expect(sessionAssessments.map(a => a.id)).toContain(assessment2.id);
@@ -135,7 +135,7 @@ describe('Visual Assessment Database', () => {
   });
 
   describe('Retrieval Operations', () => {
-    it('TC4.4: should get assessment by ID and return correct data', () => {
+    it('TC4.4: should get assessment by ID and return correct data', async () => {
       const assessment = createMockAssessment({
         soilAnalysis: mockSoilAnalysis,
         cropAnalysis: null,
@@ -143,7 +143,7 @@ describe('Visual Assessment Database', () => {
       });
       storeAssessment(assessment);
 
-      const retrieved = getAssessment(assessment.id);
+      const retrieved = await getAssessment(assessment.id);
       expect(retrieved).not.toBeNull();
       expect(retrieved?.analysisType).toBe('soil');
       expect(retrieved?.soilAnalysis).not.toBeNull();
@@ -151,12 +151,12 @@ describe('Visual Assessment Database', () => {
       expect(retrieved?.overallConfidence).toBe(assessment.overallConfidence);
     });
 
-    it('TC4.5: should return null for non-existent ID', () => {
-      const retrieved = getAssessment('non-existent-id');
+    it('TC4.5: should return null for non-existent ID', async () => {
+      const retrieved = await getAssessment('non-existent-id');
       expect(retrieved).toBeNull();
     });
 
-    it('TC4.6: should get all assessments for a session', () => {
+    it('TC4.6: should get all assessments for a session', async () => {
       const sessionId = `session-${Date.now()}`;
       const assessment1 = createMockAssessment({ sessionId });
       const assessment2 = createMockAssessment({ sessionId });
@@ -166,12 +166,12 @@ describe('Visual Assessment Database', () => {
       storeAssessment(assessment2);
       storeAssessment(assessment3);
 
-      const sessionAssessments = getSessionAssessments(sessionId);
+      const sessionAssessments = await getSessionAssessments(sessionId);
       expect(sessionAssessments.length).toBe(2);
       expect(sessionAssessments.every(a => a.sessionId === sessionId)).toBe(true);
     });
 
-    it('TC4.7: should get latest assessment (most recent)', () => {
+    it('TC4.7: should get latest assessment (most recent)', async () => {
       const sessionId = `session-${Date.now()}`;
 
       // Create assessments with different timestamps
@@ -192,19 +192,19 @@ describe('Visual Assessment Database', () => {
       storeAssessment(assessment2);
       storeAssessment(assessment3);
 
-      const latest = getLatestAssessment(sessionId);
+      const latest = await getLatestAssessment(sessionId);
       expect(latest).not.toBeNull();
       expect(latest?.id).toBe(assessment3.id);
     });
 
-    it('TC4.7b: should return null when session has no assessments', () => {
-      const latest = getLatestAssessment('session-with-no-data');
+    it('TC4.7b: should return null when session has no assessments', async () => {
+      const latest = await getLatestAssessment('session-with-no-data');
       expect(latest).toBeNull();
     });
   });
 
   describe('Cleanup Operations', () => {
-    it('TC4.8: should remove assessments older than 1 hour', () => {
+    it('TC4.8: should remove assessments older than 1 hour', async () => {
       const oldAssessment = createMockAssessment({
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
       });
@@ -219,15 +219,15 @@ describe('Visual Assessment Database', () => {
       expect(cleanedCount).toBeGreaterThanOrEqual(1);
 
       // Old assessment should be gone
-      const oldRetrieved = getAssessment(oldAssessment.id);
+      const oldRetrieved = await getAssessment(oldAssessment.id);
       expect(oldRetrieved).toBeNull();
 
       // Recent assessment should still exist
-      const recentRetrieved = getAssessment(recentAssessment.id);
+      const recentRetrieved = await getAssessment(recentAssessment.id);
       expect(recentRetrieved).not.toBeNull();
     });
 
-    it('TC4.9: should update session index during cleanup', () => {
+    it('TC4.9: should update session index during cleanup', async () => {
       const sessionId = `cleanup-session-${Date.now()}`;
       const oldAssessment = createMockAssessment({
         sessionId,
@@ -237,7 +237,7 @@ describe('Visual Assessment Database', () => {
       storeAssessment(oldAssessment);
       cleanupOldAssessments();
 
-      const sessionAssessments = getSessionAssessments(sessionId);
+      const sessionAssessments = await getSessionAssessments(sessionId);
       expect(sessionAssessments.length).toBe(0);
     });
   });

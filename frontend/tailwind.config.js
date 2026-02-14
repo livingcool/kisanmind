@@ -59,6 +59,30 @@ module.exports = {
       minWidth: {
         'touch': '48px',
       },
+      animation: {
+        'audio-bar-1': 'audio-bar-1 0.8s ease-in-out infinite',
+        'audio-bar-2': 'audio-bar-2 0.6s ease-in-out infinite',
+        'audio-bar-3': 'audio-bar-3 0.9s ease-in-out infinite',
+        'scale-in': 'scale-in 0.3s ease-out',
+      },
+      keyframes: {
+        'audio-bar-1': {
+          '0%, 100%': { height: '0.75rem' },
+          '50%': { height: '1.25rem' },
+        },
+        'audio-bar-2': {
+          '0%, 100%': { height: '1rem' },
+          '50%': { height: '0.5rem' },
+        },
+        'audio-bar-3': {
+          '0%, 100%': { height: '0.5rem' },
+          '50%': { height: '1rem' },
+        },
+        'scale-in': {
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+      },
     },
   },
   plugins: [],

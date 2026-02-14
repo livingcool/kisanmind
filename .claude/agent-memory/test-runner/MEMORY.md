@@ -185,3 +185,101 @@ npm test              # Watch mode
 npm test -- --run     # Run once
 npm test:coverage     # Coverage report
 ```
+
+## Comprehensive Test Run (Feb 13, 2026)
+
+### Overall Results
+- **Total Test Suites**: 21
+- **Passed**: 13 (61.9%)
+- **Failed**: 8 (38.1%)
+- **Total Tests**: 219
+- **Passed Tests**: 211 (96.3%)
+- **Failed Tests**: 8 (3.7%)
+- **Execution Time**: 78.105 seconds
+
+### Critical Blockers
+
+#### 1. TensorFlow/Protobuf Incompatibility (BLOCKING)
+- **Issue**: TensorFlow 2.20.0 incompatible with protobuf 4.25.8
+- **Error**: `ImportError: cannot import name 'runtime_version' from 'google.protobuf'`
+- **Impact**: All ML service tests blocked (0/3 passing)
+- **Fix**: `py -m pip install tensorflow==2.18.0 protobuf>=5.28.0`
+- **Priority**: IMMEDIATE - blocks all ML testing
+
+#### 2. Jest Mock Typing Issues (FIXABLE)
+- **Pattern**: Mock functions inferred as `never` type
+- **Affected Files**: 6 test suites (soil-intel, water-intel)
+- **Fix**: Use `jest.MockedFunction<typeof funcName>` for type safety
+- **Example**: `(analyzeSoil as jest.MockedFunction<typeof analyzeSoil>).mockResolvedValue(result)`
+
+#### 3. Missing Awaits in Firebase Tests (FIXABLE)
+- **File**: `api-server/__tests__/visual-assessment-db.test.ts`
+- **Issue**: Async Firebase operations not awaited before assertions
+- **Example**: `expect(sessionAssessments.length).toBe(0)` should be `expect((await getAssessments()).length).toBe(0)`
+
+#### 4. Node.js vs Browser APIs (FIXABLE)
+- **File**: `api-server/__tests__/ml-service-integration.test.ts`
+- **Issue**: Using browser APIs (FormData, Blob) in Node.js environment
+- **Fix**: Import Node.js equivalents: `import FormData from 'form-data'; import { Blob } from 'buffer';`
+
+### Test Coverage by Component
+
+```
+Component                 Status      Suites    Tests
+---------------------------------------------------------
+Orchestrator              ✅ GOOD     8/10      ~150 passing
+Video Guidance            ✅ GOOD     3/3       ~40 passing
+MCP Utils                 ✅ GOOD     4/4       ~20 passing
+API Server                ⚠️ PARTIAL  1/3       ~15 passing
+MCP Servers (soil/water)  ⚠️ PARTIAL  0/4       0 passing (type errors)
+MCP Servers (climate/     ❌ MISSING  N/A       No tests exist
+  market/scheme)
+ML Service (Python)       ❌ BLOCKED  0/3       Cannot run (TF error)
+Frontend                  ❌ MISSING  N/A       No tests found
+```
+
+### Demo Scenario Test Status (Vidarbha Farmer)
+
+**Scenario**: 3 acres, borewell, failed cotton crop, Vidarbha region
+
+- ✅ Location extraction (20.9°N, 77.75°E)
+- ✅ Multi-agent coordination (5 agents dispatched)
+- ✅ Synthesis report generation
+- ✅ Multi-language support (Hindi/Marathi)
+- ⚠️ ML image analysis (blocked by TF issue)
+- ❌ Government scheme lookup (not tested)
+- ❌ Market price analysis (not tested)
+
+### Next Session Priorities
+
+1. **IMMEDIATE**: Fix TensorFlow/protobuf in ML service
+2. Fix 8 failing TypeScript test suites (type errors)
+3. Add tests for climate, market, scheme MCP servers
+4. Create E2E test for full Vidarbha farmer flow
+5. Add frontend tests for React components
+6. Generate code coverage report (target >80%)
+
+### Test Execution Commands
+
+```bash
+# All tests (from project root)
+npm test
+
+# Specific suite
+npm test -- orchestrator/__tests__/orchestrator.test.ts
+
+# With coverage
+npm test -- --coverage
+
+# ML service tests (after fixing TF issue)
+cd services/ml-inference && py test_models.py
+```
+
+### Files to Fix (Priority Order)
+
+1. `services/ml-inference/requirements.txt` - Update TF/protobuf versions
+2. `mcp-servers/mcp-soil-intel/src/__tests__/index.test.ts` - Fix mock types
+3. `api-server/__tests__/visual-assessment-db.test.ts` - Add awaits
+4. `api-server/__tests__/ml-service-integration.test.ts` - Fix imports
+5. `mcp-servers/mcp-water-intel/src/__tests__/water-analyzer.test.ts` - Fix mock types
+6. `mcp-servers/mcp-soil-intel/src/__tests__/soil-analyzer.test.ts` - Fix mock types

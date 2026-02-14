@@ -476,7 +476,7 @@ function documentToSessionData(doc: SessionDocument): SessionData {
 }
 
 /** Convert a Firestore Timestamp or Date to a plain Date. */
-function toDate(value: Date | Timestamp | unknown): Date {
+export function toDate(value: Date | Timestamp | unknown): Date {
   if (value instanceof Date) return value;
   if (value && typeof value === 'object' && 'toDate' in value && typeof (value as Timestamp).toDate === 'function') {
     return (value as Timestamp).toDate();
