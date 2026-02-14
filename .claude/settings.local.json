@@ -51,7 +51,10 @@
       "Bash(fi)",
       "Bash(__NEW_LINE_82483e38168faf6a__ if [ \"$STATUS\" = \"error\" ])",
       "Bash(then)",
-      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npx jest:*)"
+      "Bash(NODE_OPTIONS=\"--experimental-vm-modules\" npx jest:*)",
+      "Bash(DEPLOYMENT-GUIDE.md:*)",
+      "Bash(bash /tmp/test_visual_upload.sh)",
+      "Bash(bash check-health.sh)"
     ]
   }
 }
