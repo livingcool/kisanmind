@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 export interface CapturedImage {
   id: string;
-  type: 'soil' | 'crop' | 'field';
+  type: 'soil' | 'crop' | 'field' | 'water';
   dataUrl: string;
   timestamp: number;
 }
