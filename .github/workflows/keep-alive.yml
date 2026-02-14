@@ -1,0 +1,41 @@
+name: Keep Render Services Alive
+
+on:
+  schedule:
+    # Run every 10 minutes (Render free tier sleeps after 15 minutes)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping ML Service
+        run: |
+          echo "Pinging ML Service..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 https://kisanmind-ml-service.onrender.com/health)
+          echo "ML Service responded with: $response"
+          if [ "$response" = "200" ]; then
+            echo "✅ ML Service is alive"
+          else
+            echo "⚠️ ML Service returned: $response"
+          fi
+
+      - name: Ping API Server
+        run: |
+          echo "Pinging API Server..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://kisanmind-api.onrender.com/health)
+          echo "API Server responded with: $response"
+          if [ "$response" = "200" ]; then
+            echo "✅ API Server is alive"
+          else
+            echo "⚠️ API Server returned: $response"
+          fi
+
+      - name: Summary
+        run: |
+          echo "======================================"
+          echo "Keep-Alive Ping Completed"
+          echo "Timestamp: $(date -u)"
+          echo "======================================"
