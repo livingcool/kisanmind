@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Camera, RefreshCw, X, Check, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useVideoStream } from './hooks/useVideoStream';
 import { useImageQuality } from './hooks/useImageQuality';
 import QualityOverlay from './QualityOverlay';
@@ -47,7 +48,7 @@ export default function CameraCapture({
     return () => {
       stopStream();
     };
-  }, []);
+  }, [startStream, stopStream]);
 
   // Analyze quality periodically when stream is active
   useEffect(() => {
@@ -163,10 +164,11 @@ export default function CameraCapture({
 
         {/* Captured Image */}
         <div className="flex-1 flex items-center justify-center p-4">
-          <img
+          <Image
             src={capturedImage}
             alt="Captured"
-            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            fill
+            className="object-contain rounded-2xl shadow-2xl"
           />
         </div>
 
@@ -270,27 +272,23 @@ export default function CameraCapture({
           <button
             onClick={handleCapture}
             disabled={quality && !quality.isAcceptable}
-            className={`min-h-touch min-w-touch w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl ${
-              quality && quality.isAcceptable
-                ? 'bg-gradient-to-br from-green-500 to-green-600 scale-110 animate-pulse'
-                : 'bg-white/90'
-            } ${
-              quality && !quality.isAcceptable
+            className={`min-h-touch min-w-touch w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl ${quality && quality.isAcceptable
+              ? 'bg-gradient-to-br from-green-500 to-green-600 scale-110 animate-pulse'
+              : 'bg-white/90'
+              } ${quality && !quality.isAcceptable
                 ? 'opacity-50 cursor-not-allowed'
                 : 'hover:scale-105'
-            }`}
+              }`}
           >
             <div
-              className={`w-16 h-16 rounded-full border-4 ${
-                quality && quality.isAcceptable
-                  ? 'border-white'
-                  : 'border-gray-300'
-              } flex items-center justify-center`}
+              className={`w-16 h-16 rounded-full border-4 ${quality && quality.isAcceptable
+                ? 'border-white'
+                : 'border-gray-300'
+                } flex items-center justify-center`}
             >
               <Camera
-                className={`w-8 h-8 ${
-                  quality && quality.isAcceptable ? 'text-white' : 'text-gray-700'
-                }`}
+                className={`w-8 h-8 ${quality && quality.isAcceptable ? 'text-white' : 'text-gray-700'
+                  }`}
               />
             </div>
           </button>
@@ -310,9 +308,8 @@ export default function CameraCapture({
         <div className="mt-4 text-center">
           {quality && (
             <p
-              className={`text-sm font-semibold ${
-                quality.isAcceptable ? 'text-green-400' : 'text-yellow-400'
-              }`}
+              className={`text-sm font-semibold ${quality.isAcceptable ? 'text-green-400' : 'text-yellow-400'
+                }`}
             >
               {quality.isAcceptable
                 ? '✓ Ready to capture'

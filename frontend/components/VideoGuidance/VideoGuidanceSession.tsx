@@ -3,7 +3,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertCircle, Loader2, Camera } from 'lucide-react';
+import Image from 'next/image';
 import CameraCapture from './CameraCapture';
 import ProgressTracker from './ProgressTracker';
 import {
@@ -267,10 +268,11 @@ export default function VideoGuidanceSession({
             <div className="aspect-video bg-neutral-900 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group">
               {capturedImages.find(img => img.id === currentStep.id) ? (
                 <>
-                  <img
-                    src={capturedImages.find(img => img.id === currentStep.id)?.dataUrl}
+                  <Image
+                    src={capturedImages.find(img => img.id === currentStep.id)?.dataUrl!}
                     alt="Captured"
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                     <button onClick={() => setShowCamera(true)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors">
@@ -376,11 +378,11 @@ export default function VideoGuidanceSession({
                     key={step.id}
                     onClick={() => setCurrentStepIndex(CAPTURE_STEPS.indexOf(step))}
                     className={`flex-shrink-0 w-24 h-24 rounded-xl border-2 overflow-hidden transition-all relative ${isCurrent ? 'border-emerald-500 shadow-lg shadow-emerald-900/20' :
-                        img ? 'border-white/20 opacity-70 hover:opacity-100' : 'border-white/5 bg-white/5'
+                      img ? 'border-white/20 opacity-70 hover:opacity-100' : 'border-white/5 bg-white/5'
                       }`}
                   >
                     {img ? (
-                      <img src={img.dataUrl} className="w-full h-full object-cover" />
+                      <Image src={img.dataUrl} alt="Captured thumbnail" fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-2xl text-white/20">
                         {step.icon}

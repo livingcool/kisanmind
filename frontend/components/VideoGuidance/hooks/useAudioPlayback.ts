@@ -60,123 +60,50 @@ export function useAudioPlayback() {
     error: null,
   });
 
+
+
   const queueRef = useRef<TTSInstruction[]>([]);
   const isPlayingRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isMountedRef = useRef(true);
 
-  // Check Web Speech API availability
-  useEffect(() => {
-    const available = typeof window !== 'undefined' && 'speechSynthesis' in window;
-    setState(prev => ({ ...prev, speechApiAvailable: available }));
+  /**
+   * Stop the currently playing audio.
+   */
+  const stopCurrent = useCallback(() => {
+    // Stop HTML audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
 
-    return () => {
-      isMountedRef.current = false;
-      // Cleanup on unmount
-      stopAll();
-    };
-  }, []);
+    // Stop speech synthesis
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
-  // Track user interaction (needed to unlock audio autoplay)
-  useEffect(() => {
-    const handleInteraction = () => {
-      setState(prev => ({ ...prev, userInteracted: true }));
-      // Also resume AudioContext if suspended
-      if (audioRef.current) {
-        audioRef.current.load();
-      }
-    };
-
-    window.addEventListener('click', handleInteraction, { once: true });
-    window.addEventListener('touchstart', handleInteraction, { once: true });
-
-    return () => {
-      window.removeEventListener('click', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-    };
+    utteranceRef.current = null;
+    isPlayingRef.current = false;
   }, []);
 
   /**
-   * Play the next instruction in the queue.
+   * Stop all audio and clear the queue.
    */
-  const processQueue = useCallback(async () => {
-    if (isPlayingRef.current || queueRef.current.length === 0) return;
+  const stopAll = useCallback(() => {
+    queueRef.current = [];
+    stopCurrent();
 
-    const instruction = queueRef.current.shift()!;
-    isPlayingRef.current = true;
-
-    if (isMountedRef.current) {
-      setState(prev => ({
-        ...prev,
-        isPlaying: true,
-        currentInstruction: instruction,
-        queueLength: queueRef.current.length,
-        error: null,
-      }));
-    }
-
-    try {
-      if (instruction.mode === 'file' && instruction.audioPath) {
-        await playAudioFile(instruction);
-      } else {
-        await playSpeechSynthesis(instruction);
-      }
-    } catch (error) {
-      console.warn('[AudioPlayback] Playback failed:', error);
-      if (isMountedRef.current) {
-        setState(prev => ({
-          ...prev,
-          error: error instanceof Error ? error.message : 'Playback failed',
-        }));
-      }
-    }
-
-    isPlayingRef.current = false;
     if (isMountedRef.current) {
       setState(prev => ({
         ...prev,
         isPlaying: false,
         currentInstruction: null,
-        queueLength: queueRef.current.length,
+        queueLength: 0,
       }));
     }
-
-    // Process next in queue
-    if (queueRef.current.length > 0) {
-      // Small delay between instructions
-      setTimeout(() => processQueue(), 300);
-    }
-  }, []);
-
-  /**
-   * Play a pre-generated audio file.
-   */
-  const playAudioFile = useCallback((instruction: TTSInstruction): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const audio = new Audio(`${API_URL}${instruction.audioPath}`);
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        audioRef.current = null;
-        resolve();
-      };
-
-      audio.onerror = () => {
-        audioRef.current = null;
-        // Fall back to speech synthesis
-        console.warn('[AudioPlayback] Audio file failed, falling back to Speech API');
-        playSpeechSynthesis(instruction).then(resolve).catch(reject);
-      };
-
-      audio.play().catch(err => {
-        // Autoplay blocked - fall back to speech synthesis
-        console.warn('[AudioPlayback] Autoplay blocked:', err);
-        playSpeechSynthesis(instruction).then(resolve).catch(reject);
-      });
-    });
-  }, []);
+  }, [stopCurrent]);
 
   /**
    * Play using the Web Speech API.
@@ -235,6 +162,89 @@ export function useAudioPlayback() {
   }, []);
 
   /**
+   * Play a pre-generated audio file.
+   */
+  const playAudioFile = useCallback((instruction: TTSInstruction): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const audio = new Audio(`${API_URL}${instruction.audioPath}`);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        audioRef.current = null;
+        resolve();
+      };
+
+      audio.onerror = () => {
+        audioRef.current = null;
+        // Fall back to speech synthesis
+        console.warn('[AudioPlayback] Audio file failed, falling back to Speech API');
+        playSpeechSynthesis(instruction).then(resolve).catch(reject);
+      };
+
+      audio.play().catch(err => {
+        // Autoplay blocked - fall back to speech synthesis
+        console.warn('[AudioPlayback] Autoplay blocked:', err);
+        playSpeechSynthesis(instruction).then(resolve).catch(reject);
+      });
+    });
+  }, [playSpeechSynthesis]);
+
+  /**
+   * Play the next instruction in the queue.
+   */
+  const processQueue = useCallback(async () => {
+    if (isPlayingRef.current || queueRef.current.length === 0) return;
+
+    const instruction = queueRef.current.shift()!;
+    isPlayingRef.current = true;
+
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        isPlaying: true,
+        currentInstruction: instruction,
+        queueLength: queueRef.current.length,
+        error: null,
+      }));
+    }
+
+    try {
+      if (instruction.mode === 'file' && instruction.audioPath) {
+        await playAudioFile(instruction);
+      } else {
+        await playSpeechSynthesis(instruction);
+      }
+    } catch (error) {
+      console.warn('[AudioPlayback] Playback failed:', error);
+      if (isMountedRef.current) {
+        setState(prev => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Playback failed',
+        }));
+      }
+    }
+
+    isPlayingRef.current = false;
+    if (isMountedRef.current) {
+      setState(prev => ({
+        ...prev,
+        isPlaying: false,
+        currentInstruction: null,
+        queueLength: queueRef.current.length,
+      }));
+    }
+
+    // Process next in queue (recursive call handling via ref/timeout to avoid dep cycle?)
+    // Actually, simply calling function is fine if it's in scope.
+    if (queueRef.current.length > 0) {
+      // Small delay between instructions
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      setTimeout(() => processQueue(), 300);
+    }
+  }, [playAudioFile, playSpeechSynthesis]);
+
+  /**
    * Enqueue a TTS instruction for playback.
    *
    * @param instruction - The TTS instruction to play
@@ -257,44 +267,38 @@ export function useAudioPlayback() {
     if (!isPlayingRef.current) {
       processQueue();
     }
-  }, [processQueue]);
+  }, [processQueue, stopCurrent]);
 
-  /**
-   * Stop the currently playing audio.
-   */
-  const stopCurrent = useCallback(() => {
-    // Stop HTML audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
+  // Check Web Speech API availability
+  useEffect(() => {
+    const available = typeof window !== 'undefined' && 'speechSynthesis' in window;
+    setState(prev => ({ ...prev, speechApiAvailable: available }));
 
-    // Stop speech synthesis
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+    return () => {
+      isMountedRef.current = false;
+      // Cleanup on unmount
+      stopAll();
+    };
+  }, [stopAll]);
 
-    utteranceRef.current = null;
-    isPlayingRef.current = false;
+  // Track user interaction (needed to unlock audio autoplay)
+  useEffect(() => {
+    const handleInteraction = () => {
+      setState(prev => ({ ...prev, userInteracted: true }));
+      // Also resume AudioContext if suspended
+      if (audioRef.current) {
+        audioRef.current.load();
+      }
+    };
+
+    window.addEventListener('click', handleInteraction, { once: true });
+    window.addEventListener('touchstart', handleInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+    };
   }, []);
-
-  /**
-   * Stop all audio and clear the queue.
-   */
-  const stopAll = useCallback(() => {
-    queueRef.current = [];
-    stopCurrent();
-
-    if (isMountedRef.current) {
-      setState(prev => ({
-        ...prev,
-        isPlaying: false,
-        currentInstruction: null,
-        queueLength: 0,
-      }));
-    }
-  }, [stopCurrent]);
 
   return {
     ...state,

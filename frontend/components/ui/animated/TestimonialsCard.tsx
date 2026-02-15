@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 interface TestimonialItem {
     id: string | number;
@@ -111,7 +112,7 @@ export function TestimonialsCard({
                                     {item.content ? (
                                         item.content
                                     ) : (
-                                        <img src={item.image} alt={item.title} className="w-full h-full object-cover rounded-xl" />
+                                        <Image src={item.image!} alt={item.title} fill className="object-cover rounded-xl" />
                                     )}
                                 </motion.div>
                             );

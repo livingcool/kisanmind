@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/lib/translations';
 import { Loader2, Info, Search, Navigation } from 'lucide-react';
 import { debounce, isValidCoordinates } from '@/lib/utils';
@@ -45,16 +45,16 @@ export default function LocationInput({
   const [searchInput, setSearchInput] = useState(address);
 
   // Rate limiting: Track last API call time
-  const [lastApiCall, setLastApiCall] = useState<number>(0);
+  const lastApiCall = useRef<number>(0);
   const MIN_API_DELAY = 1000; // 1 second between calls (Nominatim requirement)
 
   /**
    * Reverse geocode: Convert coordinates to address
    */
-  const reverseGeocode = async (lat: number, lon: number) => {
+  const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     // Rate limiting check
     const now = Date.now();
-    const timeSinceLastCall = now - lastApiCall;
+    const timeSinceLastCall = now - lastApiCall.current;
     if (timeSinceLastCall < MIN_API_DELAY) {
       await new Promise((resolve) =>
         setTimeout(resolve, MIN_API_DELAY - timeSinceLastCall)
@@ -73,7 +73,7 @@ export default function LocationInput({
         }
       );
 
-      setLastApiCall(Date.now());
+      lastApiCall.current = Date.now();
 
       if (!response.ok) {
         throw new Error('Reverse geocoding failed');
@@ -107,17 +107,20 @@ export default function LocationInput({
     } finally {
       setIsReverseGeocoding(false);
     }
-  };
+  }, [onAddressChange, onAddressDetailsChange]);
 
   /**
    * Forward geocode: Convert address search to coordinates
    */
-  const forwardGeocode = async (searchQuery: string) => {
+  /**
+   * Forward geocode: Convert address search to coordinates
+   */
+  const forwardGeocode = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
     // Rate limiting check
     const now = Date.now();
-    const timeSinceLastCall = now - lastApiCall;
+    const timeSinceLastCall = now - lastApiCall.current;
     if (timeSinceLastCall < MIN_API_DELAY) {
       await new Promise((resolve) =>
         setTimeout(resolve, MIN_API_DELAY - timeSinceLastCall)
@@ -137,7 +140,7 @@ export default function LocationInput({
         }
       );
 
-      setLastApiCall(Date.now());
+      lastApiCall.current = Date.now();
 
       if (!response.ok) {
         throw new Error('Geocoding failed');
@@ -179,10 +182,11 @@ export default function LocationInput({
     } finally {
       setIsGeocodingAddress(false);
     }
-  };
+  }, [onCoordinatesChange, onAddressDetailsChange, onAddressChange]);
 
   // Debounced forward geocoding for search input
   const debouncedForwardGeocode = useCallback(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     debounce((query: string) => forwardGeocode(query), 1000),
     []
   );
@@ -256,7 +260,7 @@ export default function LocationInput({
     if (coordinates && !address) {
       reverseGeocode(coordinates.lat, coordinates.lon);
     }
-  }, [coordinates?.lat, coordinates?.lon]);
+  }, [coordinates, address, reverseGeocode]);
 
   const isLoading = isGettingLocation || isGeocodingAddress || isReverseGeocoding;
 

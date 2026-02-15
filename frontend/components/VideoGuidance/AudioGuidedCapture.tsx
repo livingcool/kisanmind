@@ -16,6 +16,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Camera, RefreshCw, X, Check, SkipForward, Loader2, Volume2 } from 'lucide-react';
+import Image from 'next/image';
 import { useVideoStream } from './hooks/useVideoStream';
 import { useAudioPlayback, type TTSInstruction } from './hooks/useAudioPlayback';
 import { useVideoGuidanceWebSocket } from './hooks/useVideoGuidanceWebSocket';
@@ -87,22 +88,27 @@ export default function AudioGuidedCapture({
 
   // Register audio instruction handler
   useEffect(() => {
-    guidance.onInstruction((tts: TTSInstruction) => {
+    const handleInstruction = (tts: TTSInstruction) => {
       if (!isMutedRef.current) {
         audio.play(tts);
       }
-    });
-  }, []);
+    };
+    guidance.onInstruction(handleInstruction);
+    // Note: guidance.onInstruction likely registers a callback. 
+    // If guidance changes, we might re-register. 
+    // Assuming guidance methods are stable or we want to re-subscribe if guidance object changes.
+  }, [guidance, audio]);
 
   // Register quality feedback handler
   useEffect(() => {
-    guidance.onFeedback((feedback) => {
+    const handleFeedback = (feedback: any) => {
       setQualityScore(feedback.analysis.score);
       setOverlayColor(feedback.feedback.overlayColor);
       setStatusText(feedback.feedback.statusText);
       setCaptureEnabled(feedback.feedback.captureEnabled);
-    });
-  }, []);
+    };
+    guidance.onFeedback(handleFeedback);
+  }, [guidance]);
 
   // Initialize: start camera and guidance session
   useEffect(() => {
@@ -120,7 +126,7 @@ export default function AudioGuidedCapture({
       guidance.endSession();
       audio.stopAll();
     };
-  }, []);
+  }, [startStream, guidance, farmerId, language, stopStream, audio]);
 
   // Start frame analysis when camera is ready and session is initialized
   useEffect(() => {
@@ -131,7 +137,7 @@ export default function AudioGuidedCapture({
     return () => {
       guidance.stopFrameAnalysis();
     };
-  }, [stream, isInitialized, capturedImage]);
+  }, [stream, isInitialized, capturedImage, guidance, captureFrame]);
 
   // Handle capture
   const handleCapture = useCallback(async () => {
@@ -279,10 +285,11 @@ export default function AudioGuidedCapture({
 
         {/* Captured Image */}
         <div className="flex-1 flex items-center justify-center p-4">
-          <img
+          <Image
             src={capturedImage}
             alt="Captured"
-            className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+            fill
+            className="object-contain rounded-2xl shadow-2xl"
           />
         </div>
 
@@ -387,18 +394,16 @@ export default function AudioGuidedCapture({
           <button
             onClick={handleCapture}
             disabled={!captureEnabled && qualityScore !== null}
-            className={`min-h-touch min-w-touch w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl ${
-              captureEnabled
-                ? 'bg-gradient-to-br from-green-500 to-green-600 scale-110 animate-pulse'
-                : qualityScore !== null
+            className={`min-h-touch min-w-touch w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl ${captureEnabled
+              ? 'bg-gradient-to-br from-green-500 to-green-600 scale-110 animate-pulse'
+              : qualityScore !== null
                 ? 'bg-white/50 opacity-50 cursor-not-allowed'
                 : 'bg-white/90'
-            } hover:scale-105`}
+              } hover:scale-105`}
           >
             <div
-              className={`w-16 h-16 rounded-full border-4 ${
-                captureEnabled ? 'border-white' : 'border-gray-300'
-              } flex items-center justify-center`}
+              className={`w-16 h-16 rounded-full border-4 ${captureEnabled ? 'border-white' : 'border-gray-300'
+                } flex items-center justify-center`}
             >
               {isCapturing ? (
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -413,11 +418,10 @@ export default function AudioGuidedCapture({
           {/* Audio indicator */}
           <button
             onClick={handleMuteToggle}
-            className={`min-h-touch w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-              isMuted
-                ? 'bg-red-500/80 text-white'
-                : 'bg-white/20 backdrop-blur text-white'
-            }`}
+            className={`min-h-touch w-12 h-12 rounded-full flex items-center justify-center transition-all ${isMuted
+              ? 'bg-red-500/80 text-white'
+              : 'bg-white/20 backdrop-blur text-white'
+              }`}
             title={isMuted ? 'Unmute' : 'Mute'}
           >
             <Volume2 className={`w-5 h-5 ${isMuted ? 'line-through' : ''}`} />
@@ -427,15 +431,14 @@ export default function AudioGuidedCapture({
         {/* Status Text */}
         <div className="mt-3 text-center">
           <p
-            className={`text-sm font-semibold ${
-              captureEnabled ? 'text-green-400' : 'text-yellow-400'
-            }`}
+            className={`text-sm font-semibold ${captureEnabled ? 'text-green-400' : 'text-yellow-400'
+              }`}
           >
             {captureEnabled
               ? 'Ready to capture!'
               : qualityScore !== null
-              ? statusText
-              : 'Analyzing frame...'}
+                ? statusText
+                : 'Analyzing frame...'}
           </p>
         </div>
       </div>
