@@ -1,192 +1,86 @@
-// app/about/page.tsx - About page
+"use client";
 
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sprout, Droplet, CloudRain, TrendingUp, Gift, Cpu } from 'lucide-react';
-import LanguageSelector from '@/components/LanguageSelector';
+import React from "react";
+import { motion } from "framer-motion";
+import { Users, Target, Heart } from "lucide-react";
 
 export default function AboutPage() {
-  const router = useRouter();
-  const { t } = useTranslation();
-
-  const factors = [
-    {
-      icon: Sprout,
-      key: 'soil',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      icon: Droplet,
-      key: 'water',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      icon: CloudRain,
-      key: 'climate',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      icon: TrendingUp,
-      key: 'market',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-    {
-      icon: Gift,
-      key: 'schemes',
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={() => router.push('/')}
-            className="min-h-touch flex items-center gap-2 text-gray-700 hover:text-primary-600 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Home</span>
-          </button>
+    <main className="min-h-screen w-full relative pt-24 px-6 md:px-20 text-white">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
+        >
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">
+            About KisanMind
+          </h1>
+          <p className="text-xl text-neutral-300 max-w-3xl mx-auto leading-relaxed">
+            Empowering farmers with intelligent insights to cultivate a prosperous future.
+          </p>
+        </motion.div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
-                <Sprout className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 hidden sm:block">
-                {t('common.appName')}
-              </h1>
-            </div>
-            <LanguageSelector />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 pb-12">
-        <div className="max-w-4xl mx-auto">
-          {/* Title Section */}
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t('about.title')}
-            </h2>
-            <p className="text-xl text-gray-600">{t('about.subtitle')}</p>
-          </div>
-
-          {/* Description */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-12">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {t('about.howItWorks')}
-            </h3>
-            <p className="text-lg text-gray-700 leading-relaxed">
-              {t('about.description')}
-            </p>
-          </div>
-
-          {/* Factors Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {factors.map((factor) => {
-              const Icon = factor.icon;
-              return (
-                <div
-                  key={factor.key}
-                  className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-100 hover:border-primary-300 transition-all"
-                >
-                  <div
-                    className={`w-14 h-14 ${factor.bgColor} rounded-full flex items-center justify-center mb-4`}
-                  >
-                    <Icon className={`w-8 h-8 ${factor.color}`} />
-                  </div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    {t(`about.factors.${factor.key}`)}
-                  </h4>
-                  <p className="text-gray-600">
-                    {t(`about.factors.${factor.key}Desc`)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Technology Section */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 mb-12 border-2 border-purple-200">
-            <div className="flex items-start gap-6">
-              <div className="flex-shrink-0 w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
-                <Cpu className="w-8 h-8 text-white" />
+        {/* Mission Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-20"
+        >
+          <div className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 md:p-12">
+            <div className="flex flex-col md:flex-row items-start gap-8">
+              <div className="p-4 bg-emerald-900/30 rounded-2xl">
+                <Target className="w-12 h-12 text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {t('about.technology')}
-                </h3>
-                <p className="text-lg text-gray-700 mb-4">
-                  {t('about.techDesc')}
+                <h2 className="text-3xl font-bold mb-4 text-white">Our Mission</h2>
+                <p className="text-lg text-neutral-300 leading-relaxed">
+                  At KisanMind, our mission is to bridge the gap between traditional farming wisdom and modern technological advancement. We believe that every farmer deserves access to the best data, analysis, and tools to maximize their yield and income. By leveraging the power of <span className="text-emerald-400 font-semibold">Opus 4.6</span> AI, we provide personalized, actionable insights that truly make a difference.
                 </p>
-                <div className="bg-white rounded-lg p-4 border border-purple-200">
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-semibold">Architecture:</span> Multi-agent
-                    orchestration with extended thinking
-                  </p>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <span className="font-semibold">Data Sources:</span> 15+ free
-                    agricultural APIs
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold">Processing Time:</span> ~30 seconds
-                    for complete analysis
-                  </p>
-                </div>
               </div>
             </div>
           </div>
+        </motion.div>
 
-          {/* Contact Section */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {t('about.contact')}
-            </h3>
-            <p className="text-lg text-gray-600 mb-6">
-              Have questions or feedback? We&apos;d love to hear from you!
-            </p>
-            <a
-              href="mailto:support@kisanmind.in"
-              className="inline-block min-h-touch px-8 py-4 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              {t('about.contactEmail')}
-            </a>
+        {/* Vision Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mb-20"
+        >
+          <div className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 md:p-12">
+            <div className="flex flex-col md:flex-row items-start gap-8">
+              <div className="p-4 bg-cyan-900/30 rounded-2xl">
+                <Heart className="w-12 h-12 text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold mb-4 text-white">Why We Build</h2>
+                <p className="text-lg text-neutral-300 leading-relaxed">
+                  Farmers are the backbone of our society. We build to support them. Our platform is designed to be intuitive, accessible, and powerful. We are committed to creating a sustainable ecosystem where technology and nature work in harmony for abundant growth.
+                </p>
+              </div>
+            </div>
           </div>
+        </motion.div>
 
-          {/* CTA */}
-          <div className="mt-12 text-center">
-            <button
-              onClick={() => router.push('/input')}
-              className="min-h-touch px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xl font-bold rounded-xl hover:from-primary-700 hover:to-primary-800 transition-all shadow-2xl"
-            >
-              Get Your Farming Plan
-            </button>
+        {/* Powered By Section */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="text-center pb-20"
+        >
+          <div className="inline-block bg-neutral-800/50 backdrop-blur border border-white/5 rounded-full px-8 py-4">
+            <span className="text-neutral-400 text-lg">Powered by </span>
+            <span className="text-2xl font-bold text-white ml-2">Opus 4.6</span>
           </div>
-        </div>
-      </main>
+        </motion.div>
 
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-12 border-t border-gray-200">
-        <div className="text-center text-gray-600">
-          <p className="text-sm">
-            © 2026 KisanMind. Built for the Anthropic Claude Code Hackathon.
-          </p>
-          <p className="text-sm mt-2">
-            Open source project powered by Claude Opus 4.6
-          </p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
 }

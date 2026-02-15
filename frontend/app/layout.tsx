@@ -5,6 +5,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
+import { SpotlightNavbar } from '@/components/ui/animated/SpotlightNavbar';
+import { PollenBackground } from '@/components/ui/animated/PollenBackground';
 // Temporarily disabled for demo - i18n needs client-side setup
 // import '@/i18n.config';
 
@@ -45,8 +47,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="KisanMind" />
       </head>
-      <body className={`${inter.className} antialiased bg-gray-50`}>
+      <body className={`${inter.className} antialiased bg-gray-50 dark:bg-neutral-950`}>
+        {/* Top Navigation */}
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <SpotlightNavbar />
+        </div>
+
+        {/* Main Content */}
         {children}
+
+        {/* Global Background */}
+        <PollenBackground />
+
       </body>
     </html>
   );

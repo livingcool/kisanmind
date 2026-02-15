@@ -243,30 +243,30 @@ export default function FarmerInputForm({
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
         {/* Visual Assessment Option Card - Always visible but disabled if no location */}
         {!visualAssessmentId && (
-          <div className={`rounded-xl p-5 border-2 shadow-md ${coordinates
-            ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300'
-            : 'bg-gray-50 border-gray-200 opacity-75'
+          <div className={`rounded-xl p-5 border shadow-md transition-all ${coordinates
+            ? 'bg-neutral-800/60 border-emerald-500/30'
+            : 'bg-neutral-900/40 border-white/10 opacity-75'
             }`}>
             <div className="flex items-start gap-4">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${coordinates
-                ? 'bg-gradient-to-br from-blue-600 to-blue-700'
-                : 'bg-gray-400'
+                ? 'bg-gradient-to-br from-emerald-600 to-emerald-700'
+                : 'bg-neutral-700'
                 }`}>
                 <Camera className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className={`text-lg font-bold ${coordinates ? 'text-blue-900' : 'text-gray-700'}`}>
+                  <h3 className={`text-lg font-bold ${coordinates ? 'text-emerald-400' : 'text-neutral-400'}`}>
                     Want Higher Accuracy?
                   </h3>
                   {coordinates && <Sparkles className="w-4 h-4 text-yellow-500" />}
                 </div>
-                <p className={`text-sm mb-1 ${coordinates ? 'text-blue-800' : 'text-gray-600'}`}>
+                <p className={`text-sm mb-1 ${coordinates ? 'text-neutral-300' : 'text-neutral-500'}`}>
                   Take photos of your soil and crops for{' '}
                   <span className="font-bold">85-90% accuracy</span> (vs 70-80%
                   satellite-only)
                 </p>
-                <ul className={`text-xs space-y-0.5 mb-4 ml-4 ${coordinates ? 'text-blue-700' : 'text-gray-500'}`}>
+                <ul className={`text-xs space-y-0.5 mb-4 ml-4 ${coordinates ? 'text-emerald-500' : 'text-neutral-600'}`}>
                   <li>• Direct soil analysis from your field</li>
                   <li>• Crop health detection</li>
                   <li>• Better fertilizer recommendations</li>
@@ -277,13 +277,43 @@ export default function FarmerInputForm({
                   onClick={() => setShowVideoGuidance(true)}
                   disabled={!coordinates}
                   className={`w-full min-h-touch px-6 py-3 font-bold rounded-lg transition-all shadow-lg flex items-center justify-center gap-2 ${coordinates
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800'
+                    : 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-white/5'
                     }`}
                 >
                   <Camera className="w-5 h-5" />
-                  {coordinates ? 'Take Photos (Optional - 2 min)' : 'Enter Location First to Enable Photos'}
+                  {coordinates ? 'Take Photos (Optional)' : 'Enter Location First to Enable Photos'}
                 </button>
+
+                {/* Upload Option */}
+                {coordinates && (
+                  <div className="mt-3 text-center">
+                    <span className="text-xs text-neutral-500 uppercase tracking-widest px-2">OR</span>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        id="photo-upload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Mocking the completion for demo
+                            // In real app, we'd upload this file
+                            handleVisualAssessmentComplete(`upload-${Date.now()}`);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-white/10 rounded-lg text-sm font-medium text-neutral-300 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Upload from Gallery
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -444,9 +474,9 @@ export default function FarmerInputForm({
         <div>
           <label
             htmlFor="landSize"
-            className="block text-base font-semibold text-gray-900 mb-2"
+            className="block text-base font-semibold text-neutral-200 mb-2"
           >
-            {t('input.landSize')} <span className="text-red-500">*</span>
+            {t('input.landSize')} <span className="text-emerald-500">*</span>
           </label>
           <div className="flex gap-2 items-center">
             <input
@@ -457,12 +487,12 @@ export default function FarmerInputForm({
               value={landSize}
               onChange={(e) => setLandSize(e.target.value)}
               placeholder={t('input.landSizePlaceholder')}
-              className="flex-1 min-h-touch px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="flex-1 min-h-touch px-4 py-3 text-base bg-neutral-800/50 border border-white/20 text-white placeholder:text-neutral-500 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
-            <span className="text-gray-700 font-medium">{t('input.acres')}</span>
+            <span className="text-neutral-300 font-medium">{t('input.acres')}</span>
           </div>
           {errors.landSize && (
-            <p className="mt-1 text-sm text-red-600">{errors.landSize}</p>
+            <p className="mt-1 text-sm text-red-400">{errors.landSize}</p>
           )}
         </div>
 
@@ -470,15 +500,15 @@ export default function FarmerInputForm({
         <div>
           <label
             htmlFor="waterSource"
-            className="block text-base font-semibold text-gray-900 mb-2"
+            className="block text-base font-semibold text-neutral-200 mb-2"
           >
-            {t('input.waterSource')} <span className="text-red-500">*</span>
+            {t('input.waterSource')} <span className="text-emerald-500">*</span>
           </label>
           <select
             id="waterSource"
             value={waterSource}
             onChange={(e) => setWaterSource(e.target.value)}
-            className="w-full min-h-touch px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full min-h-touch px-4 py-3 text-base bg-neutral-800/50 border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 [&>option]:bg-neutral-900"
           >
             <option value="">{t('input.waterSourcePlaceholder')}</option>
             {WATER_SOURCES.map((source) => (
@@ -488,13 +518,13 @@ export default function FarmerInputForm({
             ))}
           </select>
           {errors.waterSource && (
-            <p className="mt-1 text-sm text-red-600">{errors.waterSource}</p>
+            <p className="mt-1 text-sm text-red-400">{errors.waterSource}</p>
           )}
         </div>
 
         {/* Previous Crops */}
         <div>
-          <label className="block text-base font-semibold text-gray-900 mb-3">
+          <label className="block text-base font-semibold text-neutral-200 mb-3">
             {t('input.previousCrops')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -503,9 +533,9 @@ export default function FarmerInputForm({
                 key={crop}
                 type="button"
                 onClick={() => toggleCrop(crop)}
-                className={`min-h-touch px-4 py-3 text-base rounded-lg border-2 transition-all ${previousCrops.includes(crop)
-                  ? 'bg-primary-600 border-primary-600 text-white font-semibold'
-                  : 'bg-white border-gray-300 text-gray-700 hover:border-primary-400'
+                className={`min-h-touch px-4 py-3 text-base rounded-lg border transition-all ${previousCrops.includes(crop)
+                  ? 'bg-emerald-600 border-emerald-500 text-white font-semibold'
+                  : 'bg-neutral-800/50 border-white/10 text-neutral-300 hover:border-emerald-500/50 hover:bg-neutral-800'
                   }`}
               >
                 {t(`input.crops.${crop}`)}
@@ -518,12 +548,12 @@ export default function FarmerInputForm({
         <div>
           <label
             htmlFor="budget"
-            className="block text-base font-semibold text-gray-900 mb-2"
+            className="block text-base font-semibold text-neutral-200 mb-2"
           >
             {t('input.budget')}
           </label>
           <div className="flex gap-2 items-center">
-            <span className="text-gray-700 font-medium">{t('common.rupee')}</span>
+            <span className="text-neutral-300 font-medium">{t('common.rupee')}</span>
             <input
               id="budget"
               type="number"
@@ -532,7 +562,7 @@ export default function FarmerInputForm({
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
               placeholder={t('input.budgetPlaceholder')}
-              className="flex-1 min-h-touch px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="flex-1 min-h-touch px-4 py-3 text-base bg-neutral-800/50 border border-white/20 text-white placeholder:text-neutral-500 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
@@ -541,7 +571,7 @@ export default function FarmerInputForm({
         <div>
           <label
             htmlFor="notes"
-            className="block text-base font-semibold text-gray-900 mb-2"
+            className="block text-base font-semibold text-neutral-200 mb-2"
           >
             {t('input.notes')}
           </label>
@@ -552,14 +582,14 @@ export default function FarmerInputForm({
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t('input.notesPlaceholder')}
               rows={4}
-              className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-4 py-3 text-base bg-neutral-800/50 border border-white/20 text-white placeholder:text-neutral-500 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
             {isMounted && isSpeechRecognitionSupported() && (
               <button
                 type="button"
                 onClick={handleVoiceInput}
                 disabled={isListening}
-                className="absolute right-2 top-2 min-w-touch min-h-touch p-2 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors disabled:bg-gray-200"
+                className="absolute right-2 top-2 min-w-touch min-h-touch p-2 bg-neutral-700 text-emerald-400 rounded-lg hover:bg-neutral-600 transition-colors disabled:bg-neutral-800 disabled:text-neutral-500"
                 aria-label={t('input.voiceInput')}
               >
                 <Mic
@@ -574,7 +604,7 @@ export default function FarmerInputForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full min-h-touch px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-lg font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+          className="w-full min-h-touch px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-lg font-bold rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20"
         >
           {isSubmitting ? (
             <>

@@ -8,11 +8,16 @@
 
 ## Key Architectural Decisions
 
-### 1. Multi-Language Support (i18next)
-- Translation files in `public/locales/{lang}/translation.json`
-- 5 languages: English, Hindi, Marathi, Tamil, Telugu
-- Language preference stored in localStorage
-- Nested translation keys for organization
+### 1. Multi-Language Support (i18next) - IMPLEMENTED ✅
+- **Translation files**: `public/locales/{lang}/translation.json` (en, hi, mr, ta, te)
+- **Configuration**: `i18n.config.ts` imports all 5 language files
+- **Client Provider**: `app/providers.tsx` wraps app with I18nextProvider
+- **Hook Export**: `lib/translations.ts` re-exports `useTranslation` from react-i18next
+- **Language Selector**: `components/LanguageSelector.tsx` uses `i18n.changeLanguage()`
+- **Layout Integration**: `app/layout.tsx` wraps children with `<Providers>` component
+- **Auto Detection**: Uses i18next-browser-languagedetector for localStorage + navigator
+- **Important**: All pages using translations must be client components ('use client')
+- **Usage**: Import from `@/lib/translations` or `react-i18next` directly
 
 ### 2. Mobile-First Design Principles
 - All touch targets minimum 48x48px
