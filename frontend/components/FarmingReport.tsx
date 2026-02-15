@@ -41,7 +41,6 @@ export default function FarmingReport({
   const { synthesis } = plan;
 
   return (
-  return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 justify-center print:hidden">
@@ -295,19 +294,19 @@ export default function FarmingReport({
               <div
                 key={idx}
                 className={`rounded-xl p-4 border-l-4 ${warning.severity === 'high'
-                    ? 'bg-red-900/10 border-red-500'
-                    : warning.severity === 'medium'
-                      ? 'bg-yellow-900/10 border-yellow-500'
-                      : 'bg-blue-900/10 border-blue-500'
+                  ? 'bg-red-900/10 border-red-500'
+                  : warning.severity === 'medium'
+                    ? 'bg-yellow-900/10 border-yellow-500'
+                    : 'bg-blue-900/10 border-blue-500'
                   }`}
               >
                 <div className="flex items-start gap-3">
                   <AlertTriangle
                     className={`w-5 h-5 flex-shrink-0 mt-0.5 ${warning.severity === 'high'
-                        ? 'text-red-500'
-                        : warning.severity === 'medium'
-                          ? 'text-yellow-500'
-                          : 'text-blue-500'
+                      ? 'text-red-500'
+                      : warning.severity === 'medium'
+                        ? 'text-yellow-500'
+                        : 'text-blue-500'
                       }`}
                   />
                   <div className="flex-1">
@@ -364,13 +363,13 @@ export default function FarmingReport({
           {synthesis.governmentSchemes.map((scheme, idx) => (
             <div key={idx} className="bg-white/5 rounded-xl p-5 border border-white/5 hover:border-green-500/30 transition-all hover:bg-white/10">
               <h3 className="font-bold text-white mb-2 text-lg">{scheme.name}</h3>
-              <p className="text-sm text-neutral-400 mb-3 line-clamp-2">{scheme.details}</p>
+              <p className="text-sm text-neutral-400 mb-3 line-clamp-2">{scheme.description}</p>
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="px-2 py-1 rounded-md bg-green-500/20 text-green-300 border border-green-500/30">
                   Subsidy
                 </span>
-                {scheme.link && (
-                  <a href={scheme.link} target="_blank" rel="noopener noreferrer" className="px-2 py-1 rounded-md bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-1">
+                {scheme.applicationLink && (
+                  <a href={scheme.applicationLink} target="_blank" rel="noopener noreferrer" className="px-2 py-1 rounded-md bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-1">
                     Visit Site ↗
                   </a>
                 )}
