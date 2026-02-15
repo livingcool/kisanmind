@@ -132,7 +132,7 @@ Get your personalized farming plan at KisanMind!`;
   };
 
   return (
-    <div className="min-h-screen pt-20"> {/* Removed light gradient, added padding-top for fixed navbar */}
+    <div className="min-h-screen pt-20 bg-neutral-950"> {/* Forcing dark background for white text */}
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">

@@ -313,8 +313,8 @@ export default function LandingPage() {
                                 className="bg-neutral-900/40 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-neutral-800/60 transition-all hover:-translate-y-1 group"
                             >
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
-                                        <img src={item.image} alt="Farmer" className="w-full h-full object-cover" />
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 flex items-center justify-center bg-gradient-to-br from-emerald-600 to-emerald-900">
+                                        <span className="text-xl font-bold text-white">{item.location.charAt(0)}</span>
                                     </div>
                                     <div>
                                         <div className="text-white font-bold text-sm">Verified Farmer</div>
