@@ -203,11 +203,17 @@ async function initOrchestrator() {
  * Health check endpoint
  */
 app.get('/health', (req: Request, res: Response) => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     orchestrator: createOrchestrator ? 'ready' : 'loading',
     storage: isFirebaseAvailable() ? 'firestore' : 'in-memory',
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      ANTHROPIC_API_KEY_SET: apiKey ? `yes (${apiKey.substring(0, 10)}...)` : 'NO - MISSING',
+      FRONTEND_URL: process.env.FRONTEND_URL,
+    },
   });
 });
 
