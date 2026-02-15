@@ -3,7 +3,7 @@
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
+import './global.css';
 import 'leaflet/dist/leaflet.css';
 import { SpotlightNavbar } from '@/components/ui/animated/SpotlightNavbar';
 import { PollenBackground } from '@/components/ui/animated/PollenBackground';
