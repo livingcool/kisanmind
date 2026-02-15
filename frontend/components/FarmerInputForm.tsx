@@ -282,38 +282,8 @@ export default function FarmerInputForm({
                     }`}
                 >
                   <Camera className="w-5 h-5" />
-                  {coordinates ? 'Take Photos (Optional)' : 'Enter Location First to Enable Photos'}
+                  {coordinates ? 'Start Visual Assessment' : 'Enter Location First to Enable Photos'}
                 </button>
-
-                {/* Upload Option */}
-                {coordinates && (
-                  <div className="mt-3 text-center">
-                    <span className="text-xs text-neutral-500 uppercase tracking-widest px-2">OR</span>
-                    <div className="mt-2">
-                      <input
-                        type="file"
-                        id="photo-upload"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            // Mocking the completion for demo
-                            // In real app, we'd upload this file
-                            handleVisualAssessmentComplete(`upload-${Date.now()}`);
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="photo-upload"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 border border-white/10 rounded-lg text-sm font-medium text-neutral-300 hover:bg-neutral-700 hover:text-white cursor-pointer transition-colors"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Upload from Gallery
-                      </label>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
