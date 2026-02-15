@@ -239,7 +239,7 @@ export function useAudioPlayback() {
     // Actually, simply calling function is fine if it's in scope.
     if (queueRef.current.length > 0) {
       // Small delay between instructions
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+
       setTimeout(() => processQueue(), 300);
     }
   }, [playAudioFile, playSpeechSynthesis]);

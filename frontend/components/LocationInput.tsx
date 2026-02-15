@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from '@/lib/translations';
 import { Loader2, Info, Search, Navigation } from 'lucide-react';
 import { debounce, isValidCoordinates } from '@/lib/utils';
@@ -185,10 +185,9 @@ export default function LocationInput({
   }, [onCoordinatesChange, onAddressDetailsChange, onAddressChange]);
 
   // Debounced forward geocoding for search input
-  const debouncedForwardGeocode = useCallback(
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    debounce((query: string) => forwardGeocode(query), 1000),
-    []
+  const debouncedForwardGeocode = useMemo(
+    () => debounce((query: string) => forwardGeocode(query), 1000),
+    [forwardGeocode]
   );
 
   /**
