@@ -13,9 +13,11 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@types/three": "^0.182.0",
     "axios": "^1.6.7",
     "clsx": "^2.1.0",
     "critters": "^0.0.23",
+    "framer-motion": "^12.34.0",
     "i18next": "^23.10.0",
     "i18next-browser-languagedetector": "^7.2.0",
     "leaflet": "^1.9.4",
@@ -25,7 +27,8 @@
     "react-dom": "^18.3.0",
     "react-i18next": "^14.0.5",
     "react-leaflet": "^4.2.1",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
